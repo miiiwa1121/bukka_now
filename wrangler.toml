@@ -1,0 +1,10 @@
+name = "bukka-now"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bukka-now-db"
+database_id = "8b4c99fe-240d-4cd0-b37d-2595b8ea0234"
+migrations_dir = "./migrations"
