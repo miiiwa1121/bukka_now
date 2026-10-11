@@ -1,6 +1,6 @@
 // src/components/ResultDashboard.tsx: 診断結果ダッシュボード（ホワイトボード横スライド機能・1単位プロット棒グラフ詳細搭載）
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { QuizSubmissionResult } from '../types/quiz';
 import { DetailedPlotChart } from './DetailedPlotChart';
 import { DistributionBarChart } from './DistributionBarChart';
@@ -213,8 +213,55 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
 
   const currentDetailedItem = result.questionResults[selectedQuestionIndex] ?? result.questionResults[0];
 
+  // 詳細画面表示時に body にクラスを付与し、空間全体（背景ドット）を連動移動させる
+  useEffect(() => {
+    if (activeBoard === 'detailed') {
+      document.body.classList.add('detailed-view-active');
+    } else {
+      document.body.classList.remove('detailed-view-active');
+    }
+    return () => {
+      document.body.classList.remove('detailed-view-active');
+    };
+  }, [activeBoard]);
+
   return (
-    <div className="whiteboard-stage" id="result-dashboard-view">
+    <div className={`whiteboard-stage ${activeBoard === 'detailed' ? 'is-detailed-active' : ''}`} id="result-dashboard-view">
+      {/* 画面中央・カード横に固定配置される特大（今の4倍サイズ）矢印ナビゲーションボタン */}
+      {activeBoard === 'summary' && (
+        <button
+          type="button"
+          className="whiteboard-fixed-nav-btn next-arrow"
+          onClick={() => handleGoToDetail(0)}
+          aria-label="データ詳細へ進む"
+          title="データ詳細へ進む"
+          id="btn-slide-next-arrow"
+        >
+          <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+          <span className="fixed-nav-label">詳細データ</span>
+        </button>
+      )}
+
+      {activeBoard === 'detailed' && (
+        <button
+          type="button"
+          className="whiteboard-fixed-nav-btn prev-arrow"
+          onClick={handleBackToSummary}
+          aria-label="診断サマリーに戻る"
+          title="診断サマリーに戻る"
+          id="btn-slide-prev-arrow"
+        >
+          <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span className="fixed-nav-label">サマリー</span>
+        </button>
+      )}
+
       {/* ホワイトボードスライドラック（横スライドコンテナ） */}
       <div className="whiteboard-track-viewport">
         <div className={`whiteboard-sliding-rail ${activeBoard === 'detailed' ? 'is-detailed-active' : ''}`}>
@@ -360,46 +407,12 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                   </button>
                 </div>
               </div>
-
-              {/* 診断サマリーカードの横に配置する → アイコンボタン */}
-              {activeBoard === 'summary' && (
-                <button
-                  type="button"
-                  className="whiteboard-arrow-nav-btn next-arrow"
-                  onClick={() => handleGoToDetail(0)}
-                  aria-label="データ詳細へ進む"
-                  title="データ詳細へ進む"
-                  id="btn-slide-next-arrow"
-                >
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                  </svg>
-                </button>
-              )}
             </div>
           </div>
 
           {/* 【面2：データ詳細ボード（1単位でプロットされた棒グラフ）】 */}
           <div className="whiteboard-panel panel-detailed">
             <div className="whiteboard-card-wrapper">
-              {/* データ詳細カードの横に配置する ← アイコンボタン */}
-              {activeBoard === 'detailed' && (
-                <button
-                  type="button"
-                  className="whiteboard-arrow-nav-btn prev-arrow"
-                  onClick={handleBackToSummary}
-                  aria-label="診断サマリーに戻る"
-                  title="診断サマリーに戻る"
-                  id="btn-slide-prev-arrow"
-                >
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                  </svg>
-                </button>
-              )}
-
               <div className="glass-card animate-fade-in detailed-board-card">
                 {/* 詳細画面トップバー */}
                 <div className="detailed-board-top-bar">

@@ -61,6 +61,13 @@ body {
   min-height: 100vh;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  /* 自分がカードの場所へ歩いて移動したように感じる背景ドット空間移動トランジション */
+  transition: background-position 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 詳細画面表示時：空間全体（背景ドット）が左に流れ、自分が右側のボードの前に移動した臨場感を演出 */
+body.detailed-view-active {
+  background-position: -360px 0;
 }
 
 /* App Container */
@@ -1379,7 +1386,8 @@ body {
 .whiteboard-sliding-rail {
   display: flex;
   width: 200%;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  /* 自分がカードの場所へ歩いていくような自然なドリーカメラ風のゆったりとした滑らかな移動 */
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
 
@@ -1393,97 +1401,140 @@ body {
   box-sizing: border-box;
 }
 
-/* 面1 & 面2 のパディング調整（PC時はカード横に矢印ボタンを配置する余白を確保） */
+/* 面1 & 面2 のパディング（固定ボタンになったため全幅クリーン配置） */
 .panel-summary {
-  padding-right: 64px;
-  position: relative;
+  padding: 0 0.25rem;
 }
 
 .panel-detailed {
-  padding-left: 64px;
-  position: relative;
+  padding: 0 0.25rem;
 }
 
-@media (max-width: 640px) {
-  .panel-summary {
-    padding-right: 0;
-  }
-  .panel-detailed {
-    padding-left: 0;
-  }
-}
-
-/* カードと横の矢印ボタンを包括するラッパー */
+/* カードを包括するラッパー */
 .whiteboard-card-wrapper {
   position: relative;
   width: 100%;
 }
 
-/* 診断サマリーカードの横に配置する矢印ナビゲーションボタン（unpis風太線＋フラットシャドウ） */
-.whiteboard-arrow-nav-btn {
-  position: absolute;
-  top: 36px;
+/* ==========================================================================
+   特大（今の4倍サイズ）矢印ナビゲーションボタン（画面中央・カード横に固定配置）
+   ========================================================================== */
+.whiteboard-fixed-nav-btn {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
+  gap: 0.35rem;
+  width: 104px;
+  height: 104px;
   background: #ffffff;
-  border: var(--border-thick);
-  border-radius: var(--radius-pill);
-  box-shadow: var(--shadow-flat-md);
+  border: 3px solid var(--ink-black);
+  border-radius: 50%;
+  box-shadow: 5px 5px 0 var(--ink-black);
   cursor: pointer;
   color: var(--ink-black);
-  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, box-shadow 0.15s ease;
-  z-index: 25;
+  z-index: 100;
+  user-select: none;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+              background-color 0.15s ease, 
+              box-shadow 0.15s ease;
 }
 
-.whiteboard-arrow-nav-btn svg {
+.whiteboard-fixed-nav-btn svg {
   display: block;
 }
 
-.whiteboard-arrow-nav-btn:hover {
+.whiteboard-fixed-nav-btn .fixed-nav-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--ink-black);
+  line-height: 1;
+}
+
+/* PC大画面（幅1020px以上）：中央760pxのカードのすぐ右横 / 左横に吸着配置 */
+@media (min-width: 1020px) {
+  .whiteboard-fixed-nav-btn.next-arrow {
+    left: calc(50% + 395px);
+    right: auto;
+  }
+
+  .whiteboard-fixed-nav-btn.prev-arrow {
+    right: calc(50% + 395px);
+    left: auto;
+  }
+}
+
+/* 画面幅が中程度の場合（641px〜1019px）：画面の左右端に配置 */
+@media (max-width: 1019px) and (min-width: 641px) {
+  .whiteboard-fixed-nav-btn.next-arrow {
+    right: 20px;
+    left: auto;
+  }
+
+  .whiteboard-fixed-nav-btn.prev-arrow {
+    left: 20px;
+    right: auto;
+  }
+}
+
+/* ホバー時のリアクション */
+.whiteboard-fixed-nav-btn:hover {
   background: var(--unpis-yellow);
-  box-shadow: var(--shadow-flat-lg);
+  box-shadow: 7px 7px 0 var(--ink-black);
 }
 
-.whiteboard-arrow-nav-btn.next-arrow:hover {
-  transform: translate(2px, -2px);
+.whiteboard-fixed-nav-btn.next-arrow:hover {
+  transform: translate(3px, -50%);
 }
 
-.whiteboard-arrow-nav-btn.prev-arrow:hover {
-  transform: translate(-2px, -2px);
+.whiteboard-fixed-nav-btn.prev-arrow:hover {
+  transform: translate(-3px, -50%);
 }
 
-.whiteboard-arrow-nav-btn:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--ink-black);
+/* クリック（押し込み）時 */
+.whiteboard-fixed-nav-btn:active {
+  box-shadow: 2px 2px 0 var(--ink-black);
 }
 
-/* サマリーカードの右横 */
-.whiteboard-arrow-nav-btn.next-arrow {
-  right: -60px;
+.whiteboard-fixed-nav-btn.next-arrow:active {
+  transform: translate(3px, calc(-50% + 2px));
 }
 
-/* 詳細カードの左横 */
-.whiteboard-arrow-nav-btn.prev-arrow {
-  left: -60px;
+.whiteboard-fixed-nav-btn.prev-arrow:active {
+  transform: translate(-3px, calc(-50% + 2px));
 }
 
-/* 画面幅が狭い場合（スマホ）はカード内に美しく収まるように配置 */
+/* スマホ表示（幅640px以下）：画面端の上下中央に配置（押しやすいサイズ感に調整） */
 @media (max-width: 640px) {
-  .whiteboard-arrow-nav-btn {
-    top: 14px;
-    width: 44px;
-    height: 44px;
+  .whiteboard-fixed-nav-btn {
+    width: 76px;
+    height: 76px;
+    border-width: 2.5px;
+    box-shadow: 3.5px 3.5px 0 var(--ink-black);
+    gap: 0.2rem;
   }
 
-  .whiteboard-arrow-nav-btn.next-arrow {
-    right: 14px;
+  .whiteboard-fixed-nav-btn svg {
+    width: 32px;
+    height: 32px;
   }
 
-  .whiteboard-arrow-nav-btn.prev-arrow {
-    left: 14px;
+  .whiteboard-fixed-nav-btn .fixed-nav-label {
+    font-size: 0.72rem;
+  }
+
+  .whiteboard-fixed-nav-btn.next-arrow {
+    right: 12px;
+    left: auto;
+  }
+
+  .whiteboard-fixed-nav-btn.prev-arrow {
+    left: 12px;
+    right: auto;
   }
 }
 
