@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "wrangler pages dev ./dist",
-    "deploy": "npm run build && wrangler pages deploy ./dist --project-name=bukka-now",
+    "preview": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
     "db:migrate:local": "echo y | wrangler d1 migrations apply bukka-now-db --local",
     "db:migrate:remote": "echo y | wrangler d1 migrations apply bukka-now-db --remote",
     "lint": "oxlint"

@@ -11,7 +11,7 @@
 - **キャッチコピー**: 「あなたの物価感覚、令和のいま合っていますか？ 相場感覚リアルタイム診断」
 - **コンセプト**:
   インフレや原材料高で急速に変化する商品・サービスの価格相場について、ユーザーがテンキーで価格（円）を直接回答する。自身の物価意識が「上位何%」かを、全ユーザーの回答分布や公的相場と比較しながら診断できる。
-- **本番URL**: https://bukka-now.pages.dev （カスタムドメイン: https://bukka-now.miiiwa.com ）
+- **本番URL**: https://bukka-now.miiiwa.com
 
 ---
 
@@ -127,7 +127,7 @@ graph TD
 - **カンニング防止**: 正解価格と、正解のヒントになる値（過去価格、世間平均）は、回答の送信前にはクライアントへ渡さない。採点はサーバー側で行い、マスターデータはクライアントバンドルに含めない。
 - **入力検証**: 回答送信 API は、設問ID、重複、金額範囲（0〜99,999,999円の整数）を検証する。不正な送信で集計が汚れるのを防ぐ。
 - **対応環境**: PC（マウス・トラックパッド・物理キーボード）とスマートフォン（タッチ）。
-- **インフラ**: Cloudflare Pages ＋ Pages Functions（Hono）＋ D1。構成は [design/architecture.md](../design/architecture.md) を参照。
+- **インフラ**: Cloudflare Workers（Static Assets ＋ Hono）＋ D1。構成は [design/architecture.md](../design/architecture.md) を参照。
 
 ---
 

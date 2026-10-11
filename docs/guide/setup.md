@@ -19,8 +19,8 @@
 | :--- | :--- |
 | `npm run dev` | Vite 開発サーバー＋Hono API（`@hono/vite-dev-server`）。**D1 なし** |
 | `npm run build` | `tsc -b`（型チェック）＋ `vite build` → `dist/` |
-| `npm run preview` | `wrangler pages dev ./dist`（`wrangler.toml` の D1 バインディングでローカル D1 に接続し、本番同等に動かす） |
-| `npm run deploy` | build のあと `wrangler pages deploy ./dist --project-name=bukka-now`（本番反映） |
+| `npm run preview` | `wrangler dev`（`dist/` を Static Assets として配信し、`wrangler.toml` の D1 バインディングでローカル D1 に接続して本番同等に動かす） |
+| `npm run deploy` | build のあと `wrangler deploy`（本番反映） |
 | `npm run db:migrate:local` | ローカル D1 にマイグレーションを適用 |
 | `npm run db:migrate:remote` | 本番 D1 にマイグレーションを適用 |
 | `npm run lint` | oxlint |
@@ -59,10 +59,9 @@ npm run build
 npm run preview
 ```
 
-- Wrangler が表示する URL（通常は `http://localhost:8788/`）を開く。
-- Pages Functions とローカル D1 を使って、本番と同じ流れ（保存・集計・分布）を確認できる。
-- ソースを変更したら、再度 `npm run build` が必要。
-- `--d1=DB=...` フラグは付けないこと。付けると、マイグレーション済みとは別の空のローカル DB に接続され、`no such table` エラーになる。
+- Wrangler が表示する URL（通常は `http://localhost:8787/`）を開く。
+- Worker とローカル D1 を使って、本番と同じ流れ（保存・集計・分布）を確認できる。
+- フロントを変更したら、再度 `npm run build` が必要（`dist/` を配信するため）。`server/` の変更は `wrangler dev` が自動で再読み込みする。
 
 ### 4.3 ローカル D1 の中身を見る
 
@@ -74,12 +73,12 @@ npx wrangler d1 execute bukka-now-db --local --command "SELECT COUNT(*) FROM qui
 
 ## 5. 本番デプロイ
 
-本番の運用方式は **Direct Upload**（Git 連携による自動デプロイではない）。
+本番は **Cloudflare Workers**（Static Assets 付き）。`npm run deploy` で手動反映する（Git 連携による自動デプロイではない）。
 
 | 項目 | 値 |
 | :--- | :--- |
-| Pages プロジェクト | `bukka-now` |
-| URL | https://bukka-now.pages.dev / https://bukka-now.miiiwa.com |
+| Worker | `bukka-now` |
+| URL | https://bukka-now.miiiwa.com （Custom Domain）/ https://bukka-now.miiiwa.workers.dev |
 | D1 | `bukka-now-db`（ID は `wrangler.toml` に記載） |
 
 ### 5.1 通常のデプロイ
@@ -106,7 +105,17 @@ npm run db:migrate:remote
 npm run deploy
 ```
 
-Pages プロジェクトの D1 バインディング（`DB` → `bukka-now-db`）は、`wrangler.toml` から反映される。
+Worker の D1 バインディング（`DB` → `bukka-now-db`）と Custom Domain は、`wrangler.toml` から反映される。
+
+### 5.4 Pages からの移行時のドメイン付け替え（2026-10-11 に実施済み。記録として残す）
+
+`bukka-now.miiiwa.com` が Pages プロジェクトに接続されたままだと、DNS レコードが残っているため `wrangler deploy` での Custom Domain 作成が失敗する。次の順で付け替える。
+
+1. Cloudflare ダッシュボード → Workers & Pages → Pages プロジェクト `bukka-now` → Custom domains から `bukka-now.miiiwa.com` を削除する。
+2. DNS（`miiiwa.com` ゾーン）に `bukka-now` の CNAME（`bukka-now.pages.dev` 向き）が残っていれば削除する。
+3. `npm run deploy` を実行する。Worker に Custom Domain が作られる。
+4. `https://bukka-now.miiiwa.com/` と `/api/quiz` `/api/stats` が応答することを確認する。
+5. 問題がなければ、旧 Pages プロジェクト `bukka-now`（`bukka-now.pages.dev`）を削除する。D1 は独立したリソースなので消えない。
 
 ---
 

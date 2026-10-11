@@ -44,7 +44,7 @@ docs は**日本語**で、実務レベル一式を揃える（要件定義 / �
 
 ## 技術スタック
 
-- **プラットフォーム**: Cloudflare Pages / Workers
+- **プラットフォーム**: Cloudflare Workers（Static Assets で静的配信。2026-10-11 に Pages から移行）
 - **API バックエンド**: Hono (TypeScript)
 - **データベース**: Cloudflare D1 (分散 SQLite)
 - **フロントエンド**: React (TypeScript / Vite)
@@ -63,10 +63,10 @@ npm run db:migrate:local
 # プロダクトビルド
 npm run build
 
-# Cloudflare プレビュー / ローカルテスト（要 build。ローカル D1 付き）
+# Workers ローカル実行（要 build。ローカル D1 付き）
 npm run preview
 
-# 本番デプロイ（Direct Upload）
+# 本番デプロイ（wrangler deploy）
 npm run deploy
 ```
 

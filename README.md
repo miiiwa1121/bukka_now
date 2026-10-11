@@ -2,8 +2,8 @@
 
 物価意識調査 WEB サービス。日用品・食料品・サービスの価格をテンキーで答えると、自分の相場感覚が「上位何%」かを診断できる。
 
-- 本番: https://bukka-now.pages.dev （ https://bukka-now.miiiwa.com ）
-- 技術: React + Vite / Hono on Cloudflare Pages Functions / Cloudflare D1
+- 本番: https://bukka-now.miiiwa.com
+- 技術: React + Vite / Hono on Cloudflare Workers（Static Assets）/ Cloudflare D1
 
 ## クイックスタート
 

@@ -12,9 +12,9 @@ graph TB
         SPA["React SPA (Vite + TypeScript / Vanilla CSS)"]
     end
 
-    subgraph Edge ["Cloudflare Pages プロジェクト: bukka-now"]
-        Static["静的アセット配信 (dist/)"]
-        Fn["Pages Functions: functions/api/[[route]].ts → Hono (server/app.ts)"]
+    subgraph Edge ["Cloudflare Worker: bukka-now"]
+        Static["Static Assets 配信 (dist/)"]
+        Fn["Worker: server/index.ts → Hono (server/app.ts)"]
         D1[("D1: bukka-now-db")]
     end
 
@@ -23,10 +23,11 @@ graph TB
     Fn <--> |binding: DB| D1
 ```
 
-- **Cloudflare Pages**: Vite のビルド成果物（`dist/`）を配信する。
-- **Pages Functions + Hono**: `/api/*` へのリクエストを `functions/api/[[route]].ts` が受け、`server/app.ts` の Hono アプリに渡す。出題、採点、集計、D1 への保存を担当する。
+- **Workers Static Assets**: Vite のビルド成果物（`dist/`）を配信する。存在しないパスは `index.html` を返す（`not_found_handling = "single-page-application"`）。
+- **Worker + Hono**: `wrangler.toml` の `assets.run_worker_first = ["/api/*"]` により、`/api/*` へのリクエストだけが Worker（`server/index.ts`）に届き、`server/app.ts` の Hono アプリが処理する。出題、採点、集計、D1 への保存を担当する。それ以外のリクエストは Worker を起動せずにアセットとして返る。
 - **Cloudflare D1**: 匿名の回答ログと設問別の集計を保存する。スキーマは [database.md](database.md) を参照。
-- **デプロイ方式**: Git 連携ではなく Direct Upload（`npm run deploy`）。
+- **デプロイ方式**: Git 連携ではなく `npm run deploy`（`wrangler deploy`）で手動反映する。
+- **ドメイン**: `bukka-now.miiiwa.com` を Worker の Custom Domain として接続する（`wrangler.toml` の `routes`）。`*.workers.dev` も有効にしてある。
 
 ---
 
@@ -36,9 +37,8 @@ graph TB
 bukka_now/
 ├── AGENTS.md                   # AI エージェント用プロジェクト指示
 ├── docs/                       # ドキュメント（目次: docs/README.md）
-├── functions/
-│   └── api/[[route]].ts        # Pages Functions エントリ（hono/cloudflare-pages の handle）
 ├── server/                     # API 実装（Hono）
+│   ├── index.ts                # Worker エントリ（Hono アプリを default export）
 │   ├── app.ts                  # ルーティング・D1 アクセス・集計
 │   ├── scoring.ts              # 採点・パーセンタイル・分布生成・タイプ判定
 │   └── types.ts                # Env（D1 バインディング）型
@@ -61,7 +61,7 @@ bukka_now/
 │   └── types/quiz.ts           # フロント・サーバー共通型
 ├── scripts/quiz-data/          # 小売物価統計調査からクイズマスターを生成するスクリプト（Python）
 ├── public/                     # favicon 等
-├── wrangler.toml               # Pages 設定・D1 バインディング
+├── wrangler.toml               # Worker 設定（エントリ・Static Assets・ドメイン）・D1 バインディング
 ├── vite.config.ts              # React + @hono/vite-dev-server（dev 時に /api を Hono へ）
 └── package.json
 ```
@@ -75,12 +75,10 @@ bukka_now/
 | コマンド | フロント | API | D1 |
 | :--- | :--- | :--- | :--- |
 | `npm run dev` | Vite dev server（:5173） | `@hono/vite-dev-server` が `server/app.ts` を直接実行 | **バインディングなし**（`c.env.DB` は undefined）。保存はせず、集計値は空として動く |
-| `npm run preview` | `dist/` | `wrangler pages dev` が Functions を実行 | ローカル D1（`.wrangler/state`）。`wrangler.toml` のバインディングを使う。事前に `npm run db:migrate:local` が必要 |
-| 本番 | Cloudflare Pages | Pages Functions | 本番 D1 `bukka-now-db` |
+| `npm run preview` | `dist/`（Static Assets） | `wrangler dev` が Worker（`server/index.ts`）を実行 | ローカル D1（`.wrangler/state`）。`wrangler.toml` のバインディングを使う。事前に `npm run db:migrate:local` が必要 |
+| 本番 | Workers Static Assets | Worker | 本番 D1 `bukka-now-db` |
 
 API は `c.env.DB` がない場合でも落ちないように作ってある。その場合は集計値が空（回答者0人。結果画面の世間平均は自分の回答のみから計算）として動く。
-
-> `wrangler pages dev` に `--d1=DB=...` フラグを付けると、マイグレーション済みとは別の空のローカル DB が使われてしまう。そのため `npm run preview` ではこのフラグを付けない。
 
 ---
 

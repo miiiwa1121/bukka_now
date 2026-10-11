@@ -376,3 +376,16 @@
   5. **問題数は100問を維持**: 約130品目の候補から、確認できないもの（銭湯の料金、電気代など）、品物の変遷で比較期間がほとんど残らないもの（しょうゆ、ようかん）、単位が不自然なもの（1kgあたりのマヨネーズ等）を外して100品目にした。
   6. **問題 ID を `s` ＋ 銘柄符号に変更**（例: `s1001`）: 中身が別の問題になるため、本番 D1 の旧問題（`q1`〜`q100`）の回答履歴と混ざらないようにする。
   7. **マスターは生成物にする**: `src/data/quizMaster.ts` は `scripts/quiz-data/run.sh` で生成し、手で編集しない。別の作業ディレクトリで最初から再生成し、同一の内容になることを確認済み。
+
+---
+
+## 2026-10-11: ホスティングを Cloudflare Pages から Workers（Static Assets）に移行
+- **背景**: 当初は技術スタックを「Cloudflare Pages / Workers」と併記したまま、Pages ＋ Pages Functions で実装していた。Pages を選んだ明確な理由は記録されていなかった。Cloudflare は新規プロジェクトには Workers（Static Assets 付き）を推奨している。
+- **決定内容**:
+  1. 静的配信は Workers Static Assets（`dist/`）、API は Worker（`server/index.ts` が Hono アプリを default export）にする。Pages Functions のエントリ `functions/api/[[route]].ts` は削除した。
+  2. `assets.run_worker_first = ["/api/*"]` とし、Worker が起動するのは API だけにする。静的アセットのリクエストで Worker の呼び出しを消費しない。
+  3. `not_found_handling = "single-page-application"` で、存在しないパスは `index.html` を返す（Pages の既定の挙動に合わせた）。
+  4. `bukka-now.miiiwa.com` は Worker の Custom Domain として `wrangler.toml` の `routes` で管理する。`bukka-now.pages.dev` は使わなくなる。
+  5. デプロイは引き続き手動（`npm run deploy` → `wrangler deploy`）。Pages で Direct Upload プロジェクトを Git 連携に変えられなかった制約はなくなる。
+  6. D1 `bukka-now-db` とそのデータはそのまま使う（アカウント直下の独立リソースのため）。
+- **理由**: Workers は Cloudflare の今後の機能追加の対象であり、静的配信と API を1つの `wrangler.toml` と `wrangler deploy` で管理できる。Hono アプリはそのまま Worker として動くため、アプリコードの変更は不要だった。
