@@ -1369,61 +1369,6 @@ body {
   position: relative;
 }
 
-/* ホワイトボード上部レール ＆ タブバー */
-.whiteboard-rail-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  background: var(--bg-surface);
-  border: var(--border-thick);
-  border-radius: var(--radius-md);
-  padding: 0.6rem 1rem;
-  margin-bottom: 1.25rem;
-  box-shadow: var(--shadow-flat-sm);
-}
-
-.whiteboard-tabs-wrapper {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.whiteboard-tab-pill {
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 800;
-  padding: 0.45rem 1.1rem;
-  border-radius: var(--radius-pill);
-  border: 2px solid var(--ink-black);
-  background: #ffffff;
-  color: var(--ink-black);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.whiteboard-tab-pill:hover {
-  background: var(--bg-canvas);
-  transform: translateY(-1px);
-}
-
-.whiteboard-tab-pill.active {
-  background: var(--ink-black);
-  color: #ffffff;
-}
-
-.whiteboard-slide-cue {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--ink-subtle);
-  display: none;
-}
-
-@media (min-width: 640px) {
-  .whiteboard-slide-cue {
-    display: block;
-  }
-}
-
 /* ホワイトボードスライドラック（横スライド機構） */
 .whiteboard-track-viewport {
   width: 100%;
@@ -1448,13 +1393,15 @@ body {
   box-sizing: border-box;
 }
 
-/* 面1 & 面2 のパディング調整 */
+/* 面1 & 面2 のパディング調整（PC時はカード横に矢印ボタンを配置する余白を確保） */
 .panel-summary {
-  padding-right: 0.5rem;
+  padding-right: 64px;
+  position: relative;
 }
 
 .panel-detailed {
-  padding-left: 0.5rem;
+  padding-left: 64px;
+  position: relative;
 }
 
 @media (max-width: 640px) {
@@ -1466,51 +1413,78 @@ body {
   }
 }
 
-/* 上部アクション内の「データ詳細を見る」ボタン */
-.btn-detail-slide-top {
-  background: #ffffff;
-  color: var(--ink-black);
-  border-color: var(--ink-black);
-  border-width: 2px;
+/* カードと横の矢印ボタンを包括するラッパー */
+.whiteboard-card-wrapper {
+  position: relative;
+  width: 100%;
 }
 
-.btn-detail-slide-top:hover {
-  background: var(--color-yellow);
-  color: var(--ink-black);
-}
-
-/* 各問カード下の「1単位プロット棒グラフを見る」ボタン */
-.card-plot-trigger-bar {
-  margin-top: 1.25rem;
-  padding-top: 1rem;
-  border-top: 2px dashed #e2e8f0;
+/* 診断サマリーカードの横に配置する矢印ナビゲーションボタン（unpis風太線＋フラットシャドウ） */
+.whiteboard-arrow-nav-btn {
+  position: absolute;
+  top: 36px;
   display: flex;
-  justify-content: flex-end;
-}
-
-.btn-trigger-plot {
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 800;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
   background: #ffffff;
-  color: var(--ink-black);
-  border: 2px solid var(--ink-black);
-  border-radius: var(--radius-sm);
-  padding: 0.5rem 1rem;
+  border: var(--border-thick);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-flat-md);
   cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: 2px 2px 0 var(--ink-black);
+  color: var(--ink-black);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, box-shadow 0.15s ease;
+  z-index: 25;
 }
 
-.btn-trigger-plot:hover {
-  background: var(--color-yellow);
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--ink-black);
+.whiteboard-arrow-nav-btn svg {
+  display: block;
 }
 
-.btn-trigger-plot:active {
-  transform: translate(1px, 1px);
+.whiteboard-arrow-nav-btn:hover {
+  background: var(--unpis-yellow);
+  box-shadow: var(--shadow-flat-lg);
+}
+
+.whiteboard-arrow-nav-btn.next-arrow:hover {
+  transform: translate(2px, -2px);
+}
+
+.whiteboard-arrow-nav-btn.prev-arrow:hover {
+  transform: translate(-2px, -2px);
+}
+
+.whiteboard-arrow-nav-btn:active {
+  transform: translate(2px, 2px);
   box-shadow: 1px 1px 0 var(--ink-black);
+}
+
+/* サマリーカードの右横 */
+.whiteboard-arrow-nav-btn.next-arrow {
+  right: -60px;
+}
+
+/* 詳細カードの左横 */
+.whiteboard-arrow-nav-btn.prev-arrow {
+  left: -60px;
+}
+
+/* 画面幅が狭い場合（スマホ）はカード内に美しく収まるように配置 */
+@media (max-width: 640px) {
+  .whiteboard-arrow-nav-btn {
+    top: 14px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .whiteboard-arrow-nav-btn.next-arrow {
+    right: 14px;
+  }
+
+  .whiteboard-arrow-nav-btn.prev-arrow {
+    left: 14px;
+  }
 }
 
 /* 面2：データ詳細ボード */
