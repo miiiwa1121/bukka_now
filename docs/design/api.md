@@ -39,7 +39,7 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
       "id": "s1001",
       "category": "food",
       "categoryLabel": "食料品（穀類）",
-      "title": "うるち米（コシヒカリ・5kg）の平均価格",
+      "title": "お米（コシヒカリ・5kg袋）はいくら？",
       "subtitle": "東京都区部・2025年平均（総務省 小売物価統計調査）",
       "unit": "円",
       "totalResponses": 0
@@ -104,7 +104,7 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
   "questionResults": [
     {
       "questionId": "s1001",
-      "title": "うるち米（コシヒカリ・5kg）の平均価格",
+      "title": "お米（コシヒカリ・5kg袋）はいくら？",
       "category": "food",
       "categoryLabel": "食料品（穀類）",
       "userAnswer": 4500,
@@ -169,7 +169,7 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
   "items": [
     {
       "questionId": "s1001",
-      "title": "うるち米（コシヒカリ・5kg）の平均価格",
+      "title": "お米（コシヒカリ・5kg袋）はいくら？",
       "averageExpected": 245,
       "totalResponses": 37
     }

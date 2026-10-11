@@ -29,8 +29,13 @@ def clean_spec(s):
     s = s.replace(',', '、').strip('、 ')
     return s
 
+def round_price(v):
+    """10円以上は整数、10円未満（1950年代のはがき等）は小数1桁"""
+    return round(v) if v >= 10 else round(v, 1)
+
 def fmt(v):
-    return f'{v:,.0f}' if v >= 100 or abs(v - round(v)) < 0.05 else f'{v:,.1f}'
+    v = round_price(v)
+    return f'{v:,}' if isinstance(v, int) or v == int(v) else f'{v:,.1f}'
 
 def change_text(first_y, first_v, cur):
     r = cur / first_v
@@ -43,7 +48,7 @@ for b in built:
     pts = {int(y): v for y, v in b['points'].items()}
     ys = sorted(pts)
     cur = pts[2025]
-    history = [{'year': y, 'price': round(pts[y]) if pts[y] >= 100 else round(pts[y], 1)} for y in ys]
+    history = [{'year': y, 'price': round_price(pts[y])} for y in ys]
     spec = clean_spec(b['spec'])
     parts = [f'調査銘柄：{spec}。'] if spec else []
     if len(ys) >= 2:
@@ -62,10 +67,11 @@ for b in built:
         notes.append('過去の価格は当時の調査単位から換算しています。')
     if notes: parts.append('※' + '。'.join(n.rstrip('。') for n in notes) + '。')
     items.append({
-        'id': f's{b["code"]}',
+        # 統計の単位（1kg）から身近な量に換算した品目は、ID に量を付けて換算前の回答履歴と分ける（例: s1407-200g）
+        'id': f's{b["code"]}' + (f'-{round(b["displayScale"] * 1000)}g' if b.get('displayScale') else ''),
         'category': b['cat'],
         'categoryLabel': label(b['code'], b['cat']),
-        'title': f'{b["title"]}の平均価格',
+        'title': f'{b["title"]}はいくら？',
         'subtitle': ('全国統一価格' if is_uni else '東京都区部') + '・2025年平均（総務省 小売物価統計調査）',
         'unit': '円',
         'actualPrice': round(cur),

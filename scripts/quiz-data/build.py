@@ -36,7 +36,8 @@ def num(v):
     try: return float(str(v).replace(',', ''))
     except: return None
 
-def factor(cur, q):
+def base_factor(cur, q):
+    """重さ・容量に比例した換算係数（単位の種類が違えば None）"""
     if cur[0] != q[0]: return None
     if cur[0] == 'unit': return 1.0 if cur[1] == q[1] else None
     return cur[1] / q[1]
@@ -50,14 +51,24 @@ results = []
 for code, cat, title, old, src in CANDIDATES:
     ov = OVERRIDES.get(code, {})
     if ov.get('drop'): continue
-    mode_unit = ov.get('mode') == 'unit'
-    def factor(cur, q, _f=factor):
-        if mode_unit: return 1.0
-        return _f(cur, q)
     cur_rec = (uni[2025] if src == 'uni' else tokyo[2025]).get(code)
     if not cur_rec:
         results.append({'code': code, 'title': title, 'error': '2025年データなし'}); continue
     cur_unit = cur_rec.get('unit'); cur_spec = cur_rec.get('spec') or cur_rec.get('name')
+    # 換算モード
+    #   unit:    単位表記が違っても同じ料金・品物とみなす（係数1）
+    #   scale:   重さ・容量に比例して換算する（1kgあたり等の単位、米・バターのような量で比べる品目）
+    #   package: 袋・本・個などの包装単位。内容量が同じ年だけをつなぎ、内容量が変わった年より前は使わない
+    #            （内容量を減らした「実質値上げ」を重さの換算で打ち消さないため）
+    is_weight_unit = bool(re.search(r'(kg|g|mL|ml|L)$', clean_unit(cur_unit))) and not re.match(r'^1\s*(袋|本|個|缶|箱)', clean_unit(cur_unit))
+    mode = ov.get('mode') or ('scale' if is_weight_unit else 'package')
+    def factor(cur, q, _mode=mode):
+        if _mode == 'unit': return 1.0
+        if _mode == 'package':
+            if cur[0] != q[0]: return None
+            if cur[0] == 'unit': return 1.0 if cur[1] == q[1] else None
+            return 1.0 if abs(cur[1] - q[1]) < 1e-6 else None
+        return base_factor(cur, q)
     cur_q = qty(cur_unit, cur_spec)
     pts = {}; conv = []; specs = {}
     # 2011〜2025
@@ -97,6 +108,9 @@ for code, cat, title, old, src in CANDIDATES:
     if ov.get('minYear'):
         pts = {y: v for y, v in pts.items() if y >= ov['minYear']}
         conv = [c for c in conv if not any(str(y) in c[:4] for y in range(1900, ov['minYear']))]
+    # 身近な量に言い換える倍率（例: もやし 1kgあたり → 200g は 0.2）
+    if ov.get('displayScale'):
+        pts = {y: v * ov['displayScale'] for y, v in pts.items()}
     ys = sorted(pts)
     jumps = []
     for i in range(1, len(ys)):
@@ -106,7 +120,7 @@ for code, cat, title, old, src in CANDIDATES:
     spec_changes = [y for y in range(2012, 2026) if y in specs and y - 1 in specs and norm(specs[y]) != norm(specs[y - 1])]
     results.append({'code': code, 'cat': cat, 'title': title, 'unit': cur_unit, 'spec': cur_spec, 'curQty': describe(cur_q),
                     'from': ys[0] if ys else None, 'price2025': pts.get(2025), 'points': {y: round(pts[y], 1) for y in ys},
-                    'conversions': conv, 'note': ov.get('note'), 'jumps': jumps, 'specChanges2011plus': spec_changes, 'oldCode': old})
+                    'conversions': conv, 'note': ov.get('note'), 'mode': mode, 'displayScale': ov.get('displayScale'), 'jumps': jumps, 'specChanges2011plus': spec_changes, 'oldCode': old})
 json.dump(results, open(f'{SP}/stat/built.json', 'w'), ensure_ascii=False, indent=1)
 for r in results:
     if 'error' in r: print('ERR', r['code'], r['title'], r['error']); continue

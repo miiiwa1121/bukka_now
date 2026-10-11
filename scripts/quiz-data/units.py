@@ -21,8 +21,8 @@ def parse_qty(text):
     if m:
         kind, v = _to(float(m.group(1)), m.group(2))
         return (kind, v * int(m.group(3)))
-    # 「(10個入り)」のような個数入り
-    m = re.search(r'(\d+)\s*個入り', t)
+    # 「(10個入り)」「(18枚入り)」「(44包入り)」のような個数入り
+    m = re.search(r'(\d+)\s*(?:個|枚|包|粒|錠|袋|本)入り', t)
     if m:
         return ('count', int(m.group(1)))
     # 「(400~450g入り)」のような範囲指定は内容量が一意に決まらない
