@@ -61,6 +61,8 @@ export interface QuestionResultItem {
   score: number;
   errorRate: number;
   priceNote: string;
+  pastPrice?: number;    // 過去（2020年等）の基準価格
+  pastPriceYear?: string; // 過去の年度（例: '2020年'）
   distribution: DistributionBin[];
   rawAnswers?: number[]; // 各回答者の生回答値（1単位プロット用）
 }

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import type { QuizSubmissionResult } from '../types/quiz';
 import { DetailedPlotChart } from './DetailedPlotChart';
+import { PriceTrendChart } from './PriceTrendChart';
 import { DistributionBarChart } from './DistributionBarChart';
 
 interface ResultDashboardProps {
@@ -181,7 +182,7 @@ function getIntenseComment(score: number): IntenseComment {
 
 export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetry }) => {
   const [copied, setCopied] = useState(false);
-  const [activeBoard, setActiveBoard] = useState<'summary' | 'detailed'>('summary');
+  const [activeBoard, setActiveBoard] = useState<'summary' | 'detailed' | 'trend'>('summary');
   const intenseComment = getIntenseComment(result.totalScore);
 
   const shareText = `【bukka_now 物価意識診断結果】\n物価意識スコア: 上位 ${result.topPercentile}% （総合スコア: ${result.totalScore}点）\n評価: ${intenseComment.punchline}\n判定: ${result.senseType.name}\n\nリアルタイム回答分布で診断しよう。\n#bukka_now #物価感覚診断`;
@@ -198,38 +199,98 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
     }
   };
 
-  const handleGoToDetail = () => {
-    setActiveBoard('detailed');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  // スクロール位置はそのまま維持して横スライド移動
+  const handleGoToDetail = () => setActiveBoard('detailed');
+  const handleGoToTrend = () => setActiveBoard('trend');
+  const handleBackToSummary = () => setActiveBoard('summary');
+  const handleBackToDetail = () => setActiveBoard('detailed');
 
-  const handleBackToSummary = () => {
-    setActiveBoard('summary');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // 詳細画面表示時に body にクラスを付与し、空間全体（背景ドット）を連動移動させる
+  // 表示面に応じて body クラスを付与し、空間演出を連動
   useEffect(() => {
+    document.body.classList.remove('detailed-view-active', 'trend-view-active');
     if (activeBoard === 'detailed') {
       document.body.classList.add('detailed-view-active');
-    } else {
-      document.body.classList.remove('detailed-view-active');
+    } else if (activeBoard === 'trend') {
+      document.body.classList.add('trend-view-active');
     }
     return () => {
-      document.body.classList.remove('detailed-view-active');
+      document.body.classList.remove('detailed-view-active', 'trend-view-active');
     };
   }, [activeBoard]);
 
+  // すべての面でインデント・高さを完全一致させる共通スコアヘッダー
+  const renderCommonScoreHeader = () => (
+    <>
+      {/* 1. ヒーロースコアエリア */}
+      <div className="result-hero-simple">
+        <span className="result-sub-label">あなたの物価意識スコア</span>
+
+        <div className="percentile-simple-val">
+          <span className="percentile-tag">上位</span>
+          <span className="percentile-number" id="percentile-value">{result.topPercentile}</span>
+          <span className="percentile-unit">%</span>
+        </div>
+
+        <div className="result-summary-tags">
+          <span className="summary-pill score">総合スコア: {result.totalScore}点</span>
+          <span
+            className="summary-pill type"
+            style={{ borderColor: result.senseType.badgeColor, color: result.senseType.badgeColor }}
+          >
+            {result.senseType.name}
+          </span>
+        </div>
+
+        {/* 総合スコアの下の情緒激しく派手なコメントバナー */}
+        <div className={`result-intense-comment ${intenseComment.levelClass}`} id="result-intense-comment">
+          <div className="comment-punchline">{intenseComment.punchline}</div>
+          <p className="comment-body">{intenseComment.message}</p>
+        </div>
+      </div>
+
+      {/* 2. シェア ＆ リトライアクション列 */}
+      <div className="result-top-actions" id="result-top-actions">
+        <a
+          href={xShareLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-action-top btn-x-share-top"
+          id="btn-x-share"
+        >
+          <span>Xでポストする</span>
+        </a>
+
+        <button
+          type="button"
+          className="btn-action-top btn-copy-top"
+          id="btn-copy-result"
+          onClick={handleCopy}
+        >
+          <span>{copied ? 'コピー完了' : '結果をコピー'}</span>
+        </button>
+
+        <button
+          type="button"
+          className="btn-action-top btn-retry-top"
+          id="btn-retry-top"
+          onClick={onRetry}
+        >
+          <span>もう一度挑戦する</span>
+        </button>
+      </div>
+    </>
+  );
+
   return (
-    <div className={`whiteboard-stage ${activeBoard === 'detailed' ? 'is-detailed-active' : ''}`} id="result-dashboard-view">
-      {/* 画面中央・カードとカードの真ん中に配置され、カードの移動と完全に同時に同期移動する赤色特大ナビボタン（黒縁・影なし） */}
+    <div className={`whiteboard-stage is-${activeBoard}-active`} id="result-dashboard-view">
+      {/* ナビボタン1：サマリー ⇄ 詳細 切替ボタン（カードと完全同期移動） */}
       <button
         type="button"
-        className={`whiteboard-fixed-nav-btn ${activeBoard === 'detailed' ? 'is-detailed' : 'is-summary'}`}
+        className={`whiteboard-fixed-nav-btn nav-btn-summary-detail pos-${activeBoard} ${activeBoard === 'summary' ? 'dir-right' : 'dir-left'}`}
         onClick={activeBoard === 'summary' ? handleGoToDetail : handleBackToSummary}
         aria-label={activeBoard === 'summary' ? 'データ詳細へ進む' : '診断サマリーに戻る'}
         title={activeBoard === 'summary' ? 'データ詳細へ進む' : '診断サマリーに戻る'}
-        id="btn-slide-nav-toggle"
+        id="btn-nav-summary-detail"
       >
         <div className="fixed-nav-icon-wrapper">
           {activeBoard === 'summary' ? (
@@ -249,72 +310,42 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
         </span>
       </button>
 
+      {/* ナビボタン2：詳細 ⇄ 物価推移 切替ボタン（カードと完全同期移動） */}
+      <button
+        type="button"
+        className={`whiteboard-fixed-nav-btn nav-btn-detail-trend pos-${activeBoard} ${activeBoard === 'trend' ? 'dir-left' : 'dir-right'}`}
+        onClick={activeBoard === 'trend' ? handleBackToDetail : handleGoToTrend}
+        aria-label={activeBoard === 'trend' ? '詳細データに戻る' : '物価推移へ進む'}
+        title={activeBoard === 'trend' ? '詳細データに戻る' : '物価推移へ進む'}
+        id="btn-nav-detail-trend"
+      >
+        <div className="fixed-nav-icon-wrapper">
+          {activeBoard === 'trend' ? (
+            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#ffffff" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#ffffff" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          )}
+        </div>
+        <span className="fixed-nav-label">
+          {activeBoard === 'trend' ? '詳細データ' : '物価推移'}
+        </span>
+      </button>
+
       {/* ホワイトボードスライドラック（横スライドコンテナ） */}
       <div className="whiteboard-track-viewport">
-        <div className={`whiteboard-sliding-rail ${activeBoard === 'detailed' ? 'is-detailed-active' : ''}`}>
+        <div className={`whiteboard-sliding-rail is-${activeBoard}-active`}>
           
           {/* 【面1：診断サマリーボード】 */}
           <div className="whiteboard-panel panel-summary">
             <div className="whiteboard-card-wrapper">
-              {/* 診断サマリーカード本体 */}
               <div className="glass-card animate-fade-in" id="summary-main-card">
-                {/* 1. ヒーロースコアエリア */}
-                <div className="result-hero-simple">
-                  <span className="result-sub-label">あなたの物価意識スコア</span>
-
-                  <div className="percentile-simple-val">
-                    <span className="percentile-tag">上位</span>
-                    <span className="percentile-number" id="percentile-value">{result.topPercentile}</span>
-                    <span className="percentile-unit">%</span>
-                  </div>
-
-                  <div className="result-summary-tags">
-                    <span className="summary-pill score">総合スコア: {result.totalScore}点</span>
-                    <span
-                      className="summary-pill type"
-                      style={{ borderColor: result.senseType.badgeColor, color: result.senseType.badgeColor }}
-                    >
-                      {result.senseType.name}
-                    </span>
-                  </div>
-
-                  {/* 総合スコアの下の情緒激しく派手なコメントバナー */}
-                  <div className={`result-intense-comment ${intenseComment.levelClass}`} id="result-intense-comment">
-                    <div className="comment-punchline">{intenseComment.punchline}</div>
-                    <p className="comment-body">{intenseComment.message}</p>
-                  </div>
-                </div>
-
-                {/* 2. シェア ＆ リトライアクション列 */}
-                <div className="result-top-actions" id="result-top-actions">
-                  <a
-                    href={xShareLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-action-top btn-x-share-top"
-                    id="btn-x-share"
-                  >
-                    <span>Xでポストする</span>
-                  </a>
-
-                  <button
-                    type="button"
-                    className="btn-action-top btn-copy-top"
-                    id="btn-copy-result"
-                    onClick={handleCopy}
-                  >
-                    <span>{copied ? 'コピー完了' : '結果をコピー'}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn-action-top btn-retry-top"
-                    id="btn-retry-top"
-                    onClick={onRetry}
-                  >
-                    <span>もう一度挑戦する</span>
-                  </button>
-                </div>
+                {renderCommonScoreHeader()}
 
                 {/* 3. 各問の回答分布・統計データリスト */}
                 <div className="questions-result-list" id="comparison-section">
@@ -325,7 +356,6 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                   {result.questionResults.map((item, index) => {
                     return (
                       <div key={item.questionId} className="result-question-card" id={`result-card-${item.questionId}`}>
-                        {/* カードヘッダー: 設問タイトル ＆ 質問ごとの回答者数 */}
                         <div className="card-header-clean">
                           <div className="card-title-group">
                             <span className="card-q-index">Q{index + 1}</span>
@@ -336,7 +366,6 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                           </span>
                         </div>
 
-                        {/* 5項目の統計数値サマリー（あなた / 正解 / 平均 / 最低 / 最高） */}
                         <div className="stats-five-grid">
                           <div className="stat-cell you">
                             <span className="stat-cell-label">あなたの回答</span>
@@ -364,7 +393,6 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                           </div>
                         </div>
 
-                        {/* 全体回答分布の横棒ヒストグラム（数字の横にダイレクト配置・10分割） */}
                         <DistributionBarChart
                           distribution={item.distribution}
                           userAnswer={item.userAnswer}
@@ -374,7 +402,6 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                           unit={item.unit}
                         />
 
-                        {/* 短く簡潔な相場メモ */}
                         <p className="card-clean-note">{item.priceNote}</p>
                       </div>
                     );
@@ -401,15 +428,47 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
           <div className="whiteboard-panel panel-detailed">
             <div className="whiteboard-card-wrapper">
               <div className="glass-card animate-fade-in detailed-board-card">
-                {/* 全問一覧の1単位プロット棒グラフ */}
-                <div className="detailed-all-questions-list">
-                  {result.questionResults.map((qItem, idx) => (
-                    <DetailedPlotChart
-                      key={qItem.questionId}
-                      item={qItem}
-                      questionIndex={idx}
-                    />
-                  ))}
+                {renderCommonScoreHeader()}
+
+                <div className="questions-result-list">
+                  <div className="result-section-header">
+                    <span>出題別の1単位プロット棒グラフ（全{result.questionResults.length}問）</span>
+                  </div>
+
+                  <div className="detailed-all-questions-list">
+                    {result.questionResults.map((qItem, idx) => (
+                      <DetailedPlotChart
+                        key={qItem.questionId}
+                        item={qItem}
+                        questionIndex={idx}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 【面3：物価推移ボード（過去から現在への価格変動全問一覧）】 */}
+          <div className="whiteboard-panel panel-trend">
+            <div className="whiteboard-card-wrapper">
+              <div className="glass-card animate-fade-in trend-board-card">
+                {renderCommonScoreHeader()}
+
+                <div className="questions-result-list">
+                  <div className="result-section-header">
+                    <span>出題別の物価推移・価格変動（全{result.questionResults.length}問）</span>
+                  </div>
+
+                  <div className="trend-all-questions-list">
+                    {result.questionResults.map((qItem, idx) => (
+                      <PriceTrendChart
+                        key={qItem.questionId}
+                        item={qItem}
+                        questionIndex={idx}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
