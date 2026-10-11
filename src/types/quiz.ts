@@ -62,6 +62,7 @@ export interface QuestionResultItem {
   errorRate: number;
   priceNote: string;
   distribution: DistributionBin[];
+  rawAnswers?: number[]; // 各回答者の生回答値（1単位プロット用）
 }
 
 export interface QuizSubmissionResult {

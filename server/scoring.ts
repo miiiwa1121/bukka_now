@@ -48,7 +48,7 @@ export function generateDistribution(
   userAnswer: number,
   averageExpected: number,
   allAnswersForQuestion: number[] = []
-): { distribution: DistributionBin[]; minAnswer: number; maxAnswer: number; totalResponses: number } {
+): { distribution: DistributionBin[]; minAnswer: number; maxAnswer: number; totalResponses: number; rawAnswers: number[] } {
   // 基準となる分布範囲（中央に正解価格、ユーザー回答も含める）
   const lowerBound = Math.min(Math.round(actualPrice * 0.5), Math.round(userAnswer * 0.85), Math.round(averageExpected * 0.85));
   const upperBound = Math.max(Math.round(actualPrice * 1.5), Math.round(userAnswer * 1.15), Math.round(averageExpected * 1.15));
@@ -111,7 +111,7 @@ export function generateDistribution(
     };
   });
 
-  return { distribution, minAnswer, maxAnswer, totalResponses };
+  return { distribution, minAnswer, maxAnswer, totalResponses, rawAnswers: samples };
 }
 
 export function calculateQuizResult(
@@ -145,7 +145,7 @@ export function calculateQuizResult(
     const averageExpected = aggregatedAverages[q.id] ?? actual;
 
     // 分布棒グラフおよび最高値・最低値・回答者数
-    const { distribution, minAnswer, maxAnswer, totalResponses } = generateDistribution(
+    const { distribution, minAnswer, maxAnswer, totalResponses, rawAnswers } = generateDistribution(
       actual,
       userAnswer,
       Math.round(averageExpected),
@@ -168,6 +168,7 @@ export function calculateQuizResult(
       errorRate: Number(errorRate.toFixed(3)),
       priceNote: q.priceNote,
       distribution,
+      rawAnswers,
     });
   }
 

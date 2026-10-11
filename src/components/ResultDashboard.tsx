@@ -1,7 +1,8 @@
-// src/components/ResultDashboard.tsx: 診断結果ダッシュボード（シンプル is best 仕様・感情激しい派手コメント ＆ シェアアクション上部配置）
+// src/components/ResultDashboard.tsx: 診断結果ダッシュボード（ホワイトボード横スライド機能・1単位プロット棒グラフ詳細搭載）
 
 import React, { useState } from 'react';
 import type { QuizSubmissionResult } from '../types/quiz';
+import { DetailedPlotChart } from './DetailedPlotChart';
 import { DistributionBarChart } from './DistributionBarChart';
 
 interface ResultDashboardProps {
@@ -180,6 +181,9 @@ function getIntenseComment(score: number): IntenseComment {
 
 export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetry }) => {
   const [copied, setCopied] = useState(false);
+  const [activeBoard, setActiveBoard] = useState<'summary' | 'detailed'>('summary');
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number>(0);
+  const [showAllInDetail, setShowAllInDetail] = useState<boolean>(false);
   const intenseComment = getIntenseComment(result.totalScore);
 
   const shareText = `【bukka_now 物価意識診断結果】\n物価意識スコア: 上位 ${result.topPercentile}% （総合スコア: ${result.totalScore}点）\n評価: ${intenseComment.punchline}\n判定: ${result.senseType.name}\n\nリアルタイム回答分布で診断しよう。\n#bukka_now #物価感覚診断`;
@@ -196,143 +200,317 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
     }
   };
 
+  const handleGoToDetail = (index: number) => {
+    setSelectedQuestionIndex(index);
+    setActiveBoard('detailed');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBackToSummary = () => {
+    setActiveBoard('summary');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const currentDetailedItem = result.questionResults[selectedQuestionIndex] ?? result.questionResults[0];
+
   return (
-    <div className="glass-card animate-fade-in" id="result-dashboard-view">
-      {/* 1. ヒーロースコアエリア */}
-      <div className="result-hero-simple">
-        <span className="result-sub-label">あなたの物価意識スコア</span>
-
-        <div className="percentile-simple-val">
-          <span className="percentile-tag">上位</span>
-          <span className="percentile-number" id="percentile-value">{result.topPercentile}</span>
-          <span className="percentile-unit">%</span>
-        </div>
-
-        <div className="result-summary-tags">
-          <span className="summary-pill score">総合スコア: {result.totalScore}点</span>
-          <span
-            className="summary-pill type"
-            style={{ borderColor: result.senseType.badgeColor, color: result.senseType.badgeColor }}
+    <div className="whiteboard-stage" id="result-dashboard-view">
+      {/* ホワイトボード上部レール ＆ タブ切替インジケーター */}
+      <div className="whiteboard-rail-nav">
+        <div className="whiteboard-tabs-wrapper">
+          <button
+            type="button"
+            className={`whiteboard-tab-pill ${activeBoard === 'summary' ? 'active' : ''}`}
+            onClick={handleBackToSummary}
+            id="tab-btn-summary"
           >
-            {result.senseType.name}
-          </span>
+            <span>診断サマリー</span>
+          </button>
+          <button
+            type="button"
+            className={`whiteboard-tab-pill ${activeBoard === 'detailed' ? 'active' : ''}`}
+            onClick={() => handleGoToDetail(selectedQuestionIndex)}
+            id="tab-btn-detailed"
+          >
+            <span>データ詳細（1単位プロット）</span>
+          </button>
         </div>
 
-        {/* 総合スコアの下の情緒激しく派手なコメントバナー */}
-        <div className={`result-intense-comment ${intenseComment.levelClass}`} id="result-intense-comment">
-          <div className="comment-punchline">{intenseComment.punchline}</div>
-          <p className="comment-body">{intenseComment.message}</p>
+        <div className="whiteboard-slide-cue">
+          <span>{activeBoard === 'summary' ? '横スライドで1単位プロットへ →' : '← 横スライドでサマリーへ'}</span>
         </div>
       </div>
 
-      {/* 2. シェア ＆ リトライアクション（上に統一配置・「結果をコピー」横にきれいに並ぶUI） */}
-      <div className="result-top-actions" id="result-top-actions">
-        <a
-          href={xShareLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn-action-top btn-x-share-top"
-          id="btn-x-share"
-        >
-          <span>Xでポストする</span>
-        </a>
+      {/* ホワイトボードスライドラック（横スライドコンテナ） */}
+      <div className="whiteboard-track-viewport">
+        <div className={`whiteboard-sliding-rail ${activeBoard === 'detailed' ? 'is-detailed-active' : ''}`}>
+          
+          {/* 【面1：診断サマリーボード】 */}
+          <div className="whiteboard-panel panel-summary">
+            <div className="glass-card animate-fade-in">
+              {/* 1. ヒーロースコアエリア */}
+              <div className="result-hero-simple">
+                <span className="result-sub-label">あなたの物価意識スコア</span>
 
-        <button
-          type="button"
-          className="btn-action-top btn-copy-top"
-          id="btn-copy-result"
-          onClick={handleCopy}
-        >
-          <span>{copied ? 'コピー完了' : '結果をコピー'}</span>
-        </button>
-
-        <button
-          type="button"
-          className="btn-action-top btn-retry-top"
-          id="btn-retry-top"
-          onClick={onRetry}
-        >
-          <span>もう一度挑戦する</span>
-        </button>
-      </div>
-
-      {/* 3. 各問の回答分布・統計データリスト */}
-      <div className="questions-result-list" id="comparison-section">
-        <div className="result-section-header">
-          <span>出題別の回答分布・統計（全{result.questionResults.length}問）</span>
-        </div>
-
-        {result.questionResults.map((item, index) => {
-          return (
-            <div key={item.questionId} className="result-question-card" id={`result-card-${item.questionId}`}>
-              {/* カードヘッダー: 設問タイトル ＆ 質問ごとの回答者数 */}
-              <div className="card-header-clean">
-                <div className="card-title-group">
-                  <span className="card-q-index">Q{index + 1}</span>
-                  <h3 className="card-q-title">{item.title}</h3>
-                </div>
-                <span className="card-respondents-pill">
-                  回答者数: <strong>{item.totalResponses.toLocaleString()}</strong>人
-                </span>
-              </div>
-
-              {/* 5項目の統計数値サマリー（あなた / 正解 / 平均 / 最低 / 最高） */}
-              <div className="stats-five-grid">
-                <div className="stat-cell you">
-                  <span className="stat-cell-label">あなたの回答</span>
-                  <span className="stat-cell-value">{item.userAnswer.toLocaleString()}{item.unit}</span>
+                <div className="percentile-simple-val">
+                  <span className="percentile-tag">上位</span>
+                  <span className="percentile-number" id="percentile-value">{result.topPercentile}</span>
+                  <span className="percentile-unit">%</span>
                 </div>
 
-                <div className="stat-cell actual">
-                  <span className="stat-cell-label">正解（公的相場）</span>
-                  <span className="stat-cell-value">{item.actualPrice.toLocaleString()}{item.unit}</span>
+                <div className="result-summary-tags">
+                  <span className="summary-pill score">総合スコア: {result.totalScore}点</span>
+                  <span
+                    className="summary-pill type"
+                    style={{ borderColor: result.senseType.badgeColor, color: result.senseType.badgeColor }}
+                  >
+                    {result.senseType.name}
+                  </span>
                 </div>
 
-                <div className="stat-cell avg">
-                  <span className="stat-cell-label">全体平均</span>
-                  <span className="stat-cell-value">{item.averageExpected.toLocaleString()}{item.unit}</span>
-                </div>
-
-                <div className="stat-cell min">
-                  <span className="stat-cell-label">最低値（MIN）</span>
-                  <span className="stat-cell-value">{item.minAnswer.toLocaleString()}{item.unit}</span>
-                </div>
-
-                <div className="stat-cell max">
-                  <span className="stat-cell-label">最高値（MAX）</span>
-                  <span className="stat-cell-value">{item.maxAnswer.toLocaleString()}{item.unit}</span>
+                {/* 総合スコアの下の情緒激しく派手なコメントバナー */}
+                <div className={`result-intense-comment ${intenseComment.levelClass}`} id="result-intense-comment">
+                  <div className="comment-punchline">{intenseComment.punchline}</div>
+                  <p className="comment-body">{intenseComment.message}</p>
                 </div>
               </div>
 
-              {/* 全体回答分布の横棒ヒストグラム（数字の横にダイレクト配置・10分割） */}
-              <DistributionBarChart
-                distribution={item.distribution}
-                userAnswer={item.userAnswer}
-                actualPrice={item.actualPrice}
-                minAnswer={item.minAnswer}
-                maxAnswer={item.maxAnswer}
-                unit={item.unit}
-              />
+              {/* 2. シェア ＆ リトライ ＆ データ詳細アクション列 */}
+              <div className="result-top-actions" id="result-top-actions">
+                <a
+                  href={xShareLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-action-top btn-x-share-top"
+                  id="btn-x-share"
+                >
+                  <span>Xでポストする</span>
+                </a>
 
-              {/* 短く簡潔な相場メモ */}
-              <p className="card-clean-note">{item.priceNote}</p>
+                <button
+                  type="button"
+                  className="btn-action-top btn-copy-top"
+                  id="btn-copy-result"
+                  onClick={handleCopy}
+                >
+                  <span>{copied ? 'コピー完了' : '結果をコピー'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-action-top btn-detail-slide-top"
+                  id="btn-slide-to-detail"
+                  onClick={() => handleGoToDetail(0)}
+                >
+                  <span>データ詳細を見る →</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-action-top btn-retry-top"
+                  id="btn-retry-top"
+                  onClick={onRetry}
+                >
+                  <span>もう一度挑戦する</span>
+                </button>
+              </div>
+
+              {/* 3. 各問の回答分布・統計データリスト */}
+              <div className="questions-result-list" id="comparison-section">
+                <div className="result-section-header">
+                  <span>出題別の回答分布・統計（全{result.questionResults.length}問）</span>
+                  <button
+                    type="button"
+                    className="btn-text-link"
+                    onClick={() => handleGoToDetail(0)}
+                  >
+                    全問の1単位プロットを見る →
+                  </button>
+                </div>
+
+                {result.questionResults.map((item, index) => {
+                  return (
+                    <div key={item.questionId} className="result-question-card" id={`result-card-${item.questionId}`}>
+                      {/* カードヘッダー: 設問タイトル ＆ 質問ごとの回答者数 */}
+                      <div className="card-header-clean">
+                        <div className="card-title-group">
+                          <span className="card-q-index">Q{index + 1}</span>
+                          <h3 className="card-q-title">{item.title}</h3>
+                        </div>
+                        <span className="card-respondents-pill">
+                          回答者数: <strong>{item.totalResponses.toLocaleString()}</strong>人
+                        </span>
+                      </div>
+
+                      {/* 5項目の統計数値サマリー（あなた / 正解 / 平均 / 最低 / 最高） */}
+                      <div className="stats-five-grid">
+                        <div className="stat-cell you">
+                          <span className="stat-cell-label">あなたの回答</span>
+                          <span className="stat-cell-value">{item.userAnswer.toLocaleString()}{item.unit}</span>
+                        </div>
+
+                        <div className="stat-cell actual">
+                          <span className="stat-cell-label">正解（公的相場）</span>
+                          <span className="stat-cell-value">{item.actualPrice.toLocaleString()}{item.unit}</span>
+                        </div>
+
+                        <div className="stat-cell avg">
+                          <span className="stat-cell-label">全体平均</span>
+                          <span className="stat-cell-value">{item.averageExpected.toLocaleString()}{item.unit}</span>
+                        </div>
+
+                        <div className="stat-cell min">
+                          <span className="stat-cell-label">最低値（MIN）</span>
+                          <span className="stat-cell-value">{item.minAnswer.toLocaleString()}{item.unit}</span>
+                        </div>
+
+                        <div className="stat-cell max">
+                          <span className="stat-cell-label">最高値（MAX）</span>
+                          <span className="stat-cell-value">{item.maxAnswer.toLocaleString()}{item.unit}</span>
+                        </div>
+                      </div>
+
+                      {/* 全体回答分布の横棒ヒストグラム（数字の横にダイレクト配置・10分割） */}
+                      <DistributionBarChart
+                        distribution={item.distribution}
+                        userAnswer={item.userAnswer}
+                        actualPrice={item.actualPrice}
+                        minAnswer={item.minAnswer}
+                        maxAnswer={item.maxAnswer}
+                        unit={item.unit}
+                      />
+
+                      {/* 短く簡潔な相場メモ */}
+                      <p className="card-clean-note">{item.priceNote}</p>
+
+                      {/* 1単位プロットへのスライドリンクボタン */}
+                      <div className="card-plot-trigger-bar">
+                        <button
+                          type="button"
+                          className="btn-trigger-plot"
+                          onClick={() => handleGoToDetail(index)}
+                        >
+                          <span>Q{index + 1}の1単位プロット棒グラフを見る →</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 4. 最下部アクション */}
+              <div className="result-bottom-actions">
+                <button
+                  type="button"
+                  className="btn-action-top btn-retry-top"
+                  id="btn-retry-bottom"
+                  onClick={onRetry}
+                  style={{ width: '100%', maxWidth: '360px', height: '48px', fontSize: '1rem' }}
+                >
+                  <span>もう一度挑戦する</span>
+                </button>
+              </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
 
-      {/* 4. 最下部アクション（一番下までスクロールした時用） */}
-      <div className="result-bottom-actions">
-        <button
-          type="button"
-          className="btn-action-top btn-retry-top"
-          id="btn-retry-bottom"
-          onClick={onRetry}
-          style={{ width: '100%', maxWidth: '360px', height: '48px', fontSize: '1rem' }}
-        >
-          <span>もう一度挑戦する</span>
-        </button>
+          {/* 【面2：データ詳細ボード（1単位でプロットされた棒グラフ）】 */}
+          <div className="whiteboard-panel panel-detailed">
+            <div className="glass-card animate-fade-in detailed-board-card">
+              {/* 詳細画面トップバー */}
+              <div className="detailed-board-top-bar">
+                <button
+                  type="button"
+                  className="btn-back-to-summary"
+                  onClick={handleBackToSummary}
+                  id="btn-back-to-summary"
+                >
+                  <span>← 診断サマリーに戻る</span>
+                </button>
+
+                <div className="detailed-board-view-switch">
+                  <button
+                    type="button"
+                    className={`switch-btn ${!showAllInDetail ? 'active' : ''}`}
+                    onClick={() => setShowAllInDetail(false)}
+                  >
+                    1問ずつ集中
+                  </button>
+                  <button
+                    type="button"
+                    className={`switch-btn ${showAllInDetail ? 'active' : ''}`}
+                    onClick={() => setShowAllInDetail(true)}
+                  >
+                    全問一覧
+                  </button>
+                </div>
+              </div>
+
+              <div className="detailed-board-headline">
+                <h2 className="detailed-main-title">1単位プロット棒グラフ</h2>
+                <p className="detailed-main-desc">
+                  全回答者が実際に入力したリアルな金額を「1単位」でピンポイントにプロットした詳細棒グラフです。
+                </p>
+              </div>
+
+              {/* 設問切替タブ（Q1〜Q10のピルチップ） */}
+              {!showAllInDetail && (
+                <div className="detailed-question-chips-carousel">
+                  {result.questionResults.map((q, idx) => {
+                    const isSelected = idx === selectedQuestionIndex;
+                    return (
+                      <button
+                        key={q.questionId}
+                        type="button"
+                        className={`q-select-chip ${isSelected ? 'active' : ''}`}
+                        onClick={() => setSelectedQuestionIndex(idx)}
+                      >
+                        <span className="chip-q-num">Q{idx + 1}</span>
+                        <span className="chip-q-name">{q.title.split('（')[0]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* グラフ描画エリア */}
+              {showAllInDetail ? (
+                <div className="detailed-all-questions-list">
+                  {result.questionResults.map((qItem, idx) => (
+                    <DetailedPlotChart
+                      key={qItem.questionId}
+                      item={qItem}
+                      questionIndex={idx}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="detailed-single-question-view">
+                  {currentDetailedItem && (
+                    <DetailedPlotChart
+                      item={currentDetailedItem}
+                      questionIndex={selectedQuestionIndex}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* 詳細画面の下部戻るアクション */}
+              <div className="detailed-bottom-actions">
+                <button
+                  type="button"
+                  className="btn-back-to-summary"
+                  onClick={handleBackToSummary}
+                  style={{ width: '100%', maxWidth: '320px', height: '48px' }}
+                >
+                  <span>← 診断サマリーに戻る</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   );
 };
+
