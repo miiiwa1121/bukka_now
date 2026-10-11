@@ -188,7 +188,7 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
           <span className="unified-stat-val">{formatAmount(item.averageExpected, item.unit)}</span>
         </div>
 
-        <div className="unified-stat-cell past">
+        <div className="unified-stat-cell median">
           <span className="unified-stat-label">中央値</span>
           <span className="unified-stat-val">{formatAmount(median, item.unit)}</span>
         </div>

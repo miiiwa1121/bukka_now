@@ -18,7 +18,7 @@
   /* unpis フラットアクセントカラー */
   --unpis-red: #eb4634;          /* 鮮烈なポピーレッド / 朱赤 */
   --unpis-red-hover: #d93826;
-  --unpis-blue: #1877f2;         /* コバルトブルー (あなたの選択) */
+  --unpis-blue: #1877f2;         /* コバルトブルー (中央値・フォーカス枠など) */
   --unpis-green: #25a25a;        /* リーフグリーン (正解・公的相場) */
   --unpis-yellow: #f5a623;       /* マスタードイエロー (全体平均) */
   --unpis-orange: #f26419;
@@ -956,7 +956,7 @@ body.detailed-view-active {
 }
 
 .stat-cell.you .stat-cell-value {
-  color: var(--unpis-blue);
+  color: var(--unpis-red);
 }
 
 .stat-cell.actual .stat-cell-value {
@@ -1218,7 +1218,7 @@ body.detailed-view-active {
 }
 
 .legend-swatch.bar-user {
-  background: var(--unpis-blue);
+  background: var(--unpis-red);
 }
 
 .legend-swatch.bar-actual {
@@ -1232,8 +1232,8 @@ body.detailed-view-active {
 .legend-swatch.stripe-legend {
   background: repeating-linear-gradient(
     45deg,
-    var(--unpis-blue) 0px,
-    var(--unpis-blue) 3px,
+    var(--unpis-red) 0px,
+    var(--unpis-red) 3px,
     var(--unpis-green) 3px,
     var(--unpis-green) 6px,
     var(--unpis-yellow) 6px,
@@ -1253,9 +1253,9 @@ body.detailed-view-active {
   flex-shrink: 0;
 }
 
-/* 単色: あなたの回答 (コバルトブルー) */
+/* 単色: あなたの回答 (ポピーレッド。メトリクスの「あなたの回答」と同じ色) */
 :is(.dist-bar-direct, .vplot-bar).bar-user {
-  background: var(--unpis-blue);
+  background: var(--unpis-red);
 }
 
 /* 単色: 正解 (リーフグリーン) */
@@ -1273,23 +1273,23 @@ body.detailed-view-active {
   background: #d4cfc5;
 }
 
-/* 重なり: あなた ＋ 正解 (青 & 緑の斜めシマシマ) */
+/* 重なり: あなた ＋ 正解 (赤 & 緑の斜めシマシマ) */
 :is(.dist-bar-direct, .vplot-bar).stripe-user-actual {
   background: repeating-linear-gradient(
     45deg,
-    var(--unpis-blue) 0px,
-    var(--unpis-blue) 6px,
+    var(--unpis-red) 0px,
+    var(--unpis-red) 6px,
     var(--unpis-green) 6px,
     var(--unpis-green) 12px
   );
 }
 
-/* 重なり: あなた ＋ 平均値 (青 & 黄の斜めシマシマ) */
+/* 重なり: あなた ＋ 平均値 (赤 & 黄の斜めシマシマ) */
 :is(.dist-bar-direct, .vplot-bar).stripe-user-avg {
   background: repeating-linear-gradient(
     45deg,
-    var(--unpis-blue) 0px,
-    var(--unpis-blue) 6px,
+    var(--unpis-red) 0px,
+    var(--unpis-red) 6px,
     var(--unpis-yellow) 6px,
     var(--unpis-yellow) 12px
   );
@@ -1306,12 +1306,12 @@ body.detailed-view-active {
   );
 }
 
-/* 重なり: 3者全て重複 (青 & 緑 & 黄の3色斜めシマシマ) */
+/* 重なり: 3者全て重複 (赤 & 緑 & 黄の3色斜めシマシマ) */
 :is(.dist-bar-direct, .vplot-bar).stripe-all {
   background: repeating-linear-gradient(
     45deg,
-    var(--unpis-blue) 0px,
-    var(--unpis-blue) 5px,
+    var(--unpis-red) 0px,
+    var(--unpis-red) 5px,
     var(--unpis-green) 5px,
     var(--unpis-green) 10px,
     var(--unpis-yellow) 10px,
@@ -1833,12 +1833,17 @@ body.detailed-view-active {
   color: var(--unpis-red);
 }
 
+/* メトリクスの数値は、グラフの棒・凡例と同じ色にする（回答=赤 / 正解=緑 / 平均値=黄 / 中央値=青） */
 .unified-stat-cell.actual .unified-stat-val {
-  color: var(--color-green, #10b981);
+  color: var(--unpis-green);
 }
 
 .unified-stat-cell.avg .unified-stat-val {
-  color: #2b5c8f;
+  color: var(--unpis-yellow);
+}
+
+.unified-stat-cell.median .unified-stat-val {
+  color: var(--unpis-blue);
 }
 
 .unified-stat-cell.past .unified-stat-val {
@@ -1890,7 +1895,7 @@ body.detailed-view-active {
 }
 
 .legend-chip .legend-dot.avg-dot {
-  background: #2b5c8f;
+  background: var(--unpis-yellow);
 }
 
 .legend-chip .legend-dot.past-dot {
