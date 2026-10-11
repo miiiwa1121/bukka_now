@@ -23,6 +23,9 @@
 | `npm run deploy` | build のあと `wrangler deploy`（本番反映） |
 | `npm run db:migrate:local` | ローカル D1 にマイグレーションを適用 |
 | `npm run db:migrate:remote` | 本番 D1 にマイグレーションを適用 |
+| `npm run synthetic:generate` | 生成データ（架空の回答者の回答）の投入 SQL を `scripts/synthetic-data/out/insert.sql` に書き出す |
+| `npm run synthetic:insert:local` / `:remote` | 生成データをローカル / 本番 D1 に投入 |
+| `npm run synthetic:delete:local` / `:remote` | 生成データをローカル / 本番 D1 から削除（実ユーザーの回答は残る） |
 | `npm run lint` | oxlint |
 
 ---
@@ -66,7 +69,17 @@ npm run preview
 ### 4.3 ローカル D1 の中身を見る
 
 ```bash
-npx wrangler d1 execute bukka-now-db --local --command "SELECT COUNT(*) FROM quiz_submissions"
+npx wrangler d1 execute bukka-now-db --local --command "SELECT source, COUNT(*) FROM quiz_submissions GROUP BY source"
+```
+
+### 4.4 生成データを入れる
+
+ローカル D1 は空なので、分布や世間平均を確認したいときは生成データを入れる。詳細は [scripts/synthetic-data/README.md](../../scripts/synthetic-data/README.md)。
+
+```bash
+npm run db:migrate:local
+npm run synthetic:generate
+npm run synthetic:insert:local
 ```
 
 ---

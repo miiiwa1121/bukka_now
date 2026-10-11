@@ -10,6 +10,11 @@
     "deploy": "npm run build && wrangler deploy",
     "db:migrate:local": "echo y | wrangler d1 migrations apply bukka-now-db --local",
     "db:migrate:remote": "echo y | wrangler d1 migrations apply bukka-now-db --remote",
+    "synthetic:generate": "tsx scripts/synthetic-data/generate.ts",
+    "synthetic:insert:local": "wrangler d1 execute bukka-now-db --local --file scripts/synthetic-data/out/insert.sql",
+    "synthetic:insert:remote": "wrangler d1 execute bukka-now-db --remote --file scripts/synthetic-data/out/insert.sql",
+    "synthetic:delete:local": "wrangler d1 execute bukka-now-db --local --file scripts/synthetic-data/delete.sql",
+    "synthetic:delete:remote": "wrangler d1 execute bukka-now-db --remote --file scripts/synthetic-data/delete.sql",
     "lint": "oxlint"
   },
   "dependencies": {
@@ -27,6 +32,7 @@
     "@vitejs/plugin-react": "^6.1.1",
     "canvas-confetti": "^1.9.4",
     "oxlint": "^1.81.0",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
     "wrangler": "^4.149.0"

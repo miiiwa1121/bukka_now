@@ -28,3 +28,6 @@ dist-ssr
 # クイズデータ生成の作業ディレクトリ
 scripts/quiz-data/.work
 __pycache__
+
+# 生成データ投入 SQL（scripts/synthetic-data/generate.ts の出力）
+scripts/synthetic-data/out

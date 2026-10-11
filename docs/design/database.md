@@ -1,7 +1,7 @@
 # データベース設計書（Database Design）
 
 Cloudflare D1（エッジ分散型 SQLite）のテーブル構成、インデックス、およびクエリ仕様を定義します。
-正となる定義は `migrations/0001_initial_schema.sql` です。
+正となる定義は `migrations/` 配下の SQL（`0001_initial_schema.sql` → `0002_add_submission_source.sql` の順に適用）です。
 
 ---
 
@@ -10,7 +10,8 @@ Cloudflare D1（エッジ分散型 SQLite）のテーブル構成、インデッ
 - データベース名: `bukka-now-db`（バインディング名 `DB`、設定は `wrangler.toml`）
 - ユーザー登録はないため、個人を識別する情報は保存しない。
 - 保存するのは「診断1回分の結果」「設問ごとの回答」「設問別の集計」の3種類。
-- **シードデータは投入しない**。世間平均・分布・回答者数は実回答だけで作る。
+- 世間平均・分布・回答者数は、D1 に入っている回答から作る。コードや migration に値を直接書いたシードは入れない。
+- 実ユーザーの回答に加えて、生成スクリプトで作った架空の回答者の回答（**生成データ**）も同じテーブルに入れ、集計に含める。`quiz_submissions.source` で区別する（[5. 生成データ](#5-生成データsynthetic)）。
 
 ```mermaid
 erDiagram
@@ -28,11 +29,14 @@ erDiagram
 
 | カラム名 | 型 | 制約 | 説明 |
 | :--- | :--- | :--- | :--- |
-| `id` | TEXT | PRIMARY KEY | `sub_<epochミリ秒>_<ランダム7文字>` |
+| `id` | TEXT | PRIMARY KEY | 実ユーザー: `sub_<epochミリ秒>_<ランダム7文字>` / 生成データ: `syn_<バッチ epochミリ秒>_<連番4桁>` |
 | `total_score` | INTEGER | NOT NULL | 総合スコア（0〜100） |
 | `sense_type` | TEXT | NOT NULL | タイプコード（`master` / `timeslip` / `panic` / `rough`） |
 | `bias_score` | REAL | NOT NULL | 平均バイアス |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | 受信日時 |
+| `source` | TEXT | NOT NULL DEFAULT `'user'` | データの出どころ。`user`: 実ユーザー（API 経由）/ `synthetic`: 生成データ。0002 で追加 |
+| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | 受信日時（生成データは投入した時刻） |
+
+インデックス: `idx_submissions_source(source)`
 
 ### 2.2 `quiz_answers`（設問別回答ログ）
 
@@ -85,4 +89,32 @@ erDiagram
 - 適用コマンド:
   - ローカル: `npm run db:migrate:local`
   - 本番: `npm run db:migrate:remote`
-- スキーマ変更は既存ファイルを書き換えず、`0002_xxx.sql` のように新しいファイルを追加する。
+- スキーマ変更は既存ファイルを書き換えず、`0003_xxx.sql` のように新しいファイルを追加する。
+
+| ファイル | 内容 |
+| :--- | :--- |
+| `0001_initial_schema.sql` | 3テーブルとインデックスの作成（データなし） |
+| `0002_add_submission_source.sql` | `quiz_submissions.source` と `idx_submissions_source` の追加。既存行は `user` になる |
+
+---
+
+## 5. 生成データ（synthetic）
+
+架空の回答者の回答を `scripts/synthetic-data/generate.ts` で生成し、実ユーザーと同じテーブルに入れている。手順は [scripts/synthetic-data/README.md](../../scripts/synthetic-data/README.md)。
+
+- **見分け方**: `quiz_submissions.source = 'synthetic'`、ID が `syn_` で始まる。`quiz_answers` は `submission_id` で `quiz_submissions` と結合して判別する。
+- **集計への反映**: 画面に出る値（累計回答者数・設問別回答者数・世間平均・分布・最低値・最高値）には生成データも含まれる。API は `source` を見ていない。
+- **投入済み**: 2026-10-11 に本番・ローカルの両方へ 500人 × 100問（回答50,000行、seed `20261011`）を投入した。
+
+```sql
+-- 実ユーザーだけの件数
+SELECT COUNT(*) FROM quiz_submissions WHERE source = 'user';
+
+-- 実ユーザーだけの設問別平均
+SELECT a.question_id, COUNT(*), AVG(a.user_answer)
+FROM quiz_answers a JOIN quiz_submissions s ON s.id = a.submission_id
+WHERE s.source = 'user'
+GROUP BY a.question_id;
+```
+
+- **削除**: `scripts/synthetic-data/delete.sql` が、生成データの分を `item_aggregates` から差し引いてから回答とセッションを消す。実ユーザーの行には触れない。

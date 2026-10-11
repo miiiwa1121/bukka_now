@@ -43,7 +43,8 @@ bukka_now/
 │   ├── scoring.ts              # 採点・パーセンタイル・分布生成・タイプ判定
 │   └── types.ts                # Env（D1 バインディング）型
 ├── migrations/
-│   └── 0001_initial_schema.sql # D1 スキーマ（シードデータなし）
+│   ├── 0001_initial_schema.sql # D1 スキーマ（シードデータなし）
+│   └── 0002_add_submission_source.sql # quiz_submissions.source（実ユーザー / 生成データの区別）
 ├── src/                        # フロントエンド（React）
 │   ├── App.tsx                 # 画面遷移（landing / quiz / result）・10秒タイマー・API 呼び出し
 │   ├── main.tsx
@@ -60,6 +61,7 @@ bukka_now/
 │   ├── data/quizMaster.ts      # 100問マスター（正解価格・推移・コラム）＋ SENSE_TYPES。scripts/quiz-data で生成
 │   └── types/quiz.ts           # フロント・サーバー共通型
 ├── scripts/quiz-data/          # 小売物価統計調査からクイズマスターを生成するスクリプト（Python）
+├── scripts/synthetic-data/     # 架空の回答者の回答を生成し D1 に投入・削除するスクリプト（TypeScript）
 ├── public/                     # favicon 等
 ├── wrangler.toml               # Worker 設定（エントリ・Static Assets・ドメイン）・D1 バインディング
 ├── vite.config.ts              # React + @hono/vite-dev-server（dev 時に /api を Hono へ）
