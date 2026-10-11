@@ -256,6 +256,51 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
     );
   };
 
+  // スマホ用の面切り替えボタン（左下 = 前の面へ / 右下 = 次の面へ。画面の端から張り出す U 字を横にした形）
+  // 行き先がない側は画面外へ引っ込める。引っ込む間に文字が変わらないよう、そのときは端の面の名前のままにする
+  const renderEdgeNav = () => {
+    const index = BOARD_ORDER.indexOf(activeBoard);
+    const prevBoard = BOARD_ORDER[index - 1];
+    const nextBoard = BOARD_ORDER[index + 1];
+    const prevLabel = BOARD_LABELS[prevBoard ?? BOARD_ORDER[0]];
+    const nextLabel = BOARD_LABELS[nextBoard ?? BOARD_ORDER[BOARD_ORDER.length - 1]];
+
+    return (
+      <nav className="board-edge-nav" aria-label="結果の表示切り替え">
+        <button
+          type="button"
+          className={`board-edge-btn is-prev ${prevBoard ? '' : 'is-hidden'}`}
+          onClick={() => prevBoard && setActiveBoard(prevBoard)}
+          aria-label={`${prevLabel}に戻る`}
+          aria-hidden={!prevBoard}
+          tabIndex={prevBoard ? 0 : -1}
+          id="btn-edge-prev"
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span>{prevLabel}</span>
+        </button>
+        <button
+          type="button"
+          className={`board-edge-btn is-next ${nextBoard ? '' : 'is-hidden'}`}
+          onClick={() => nextBoard && setActiveBoard(nextBoard)}
+          aria-label={`${nextLabel}へ進む`}
+          aria-hidden={!nextBoard}
+          tabIndex={nextBoard ? 0 : -1}
+          id="btn-edge-next"
+        >
+          <span>{nextLabel}</span>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </nav>
+    );
+  };
+
   // スワイプ / ドラッグによる画面切り替えハンドラー（タッチ＆マウス対応）
   const touchStartXRef = React.useRef<number | null>(null);
   const touchStartYRef = React.useRef<number | null>(null);
@@ -453,6 +498,9 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
           {renderCommonScoreHeader()}
         </div>
       </div>
+
+      {/* スマホ用の面切り替えボタン（幅640px以下でだけ表示。画面の左下・右下に固定し、最前面に置く） */}
+      {renderEdgeNav()}
 
       {/* ホワイトボードスライドラック（横スライドコンテナ・スワイプ/ドラッグ対応） */}
       <div

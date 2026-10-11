@@ -257,7 +257,7 @@ export const App: React.FC = () => {
 
         {/* 2. クイズ回答ビュー（テンキー入力型・10秒タイマー・質問ごとの回答者数表示） */}
         {view === 'quiz' && currentQ && (
-          <div className="glass-card animate-fade-in" id="quiz-card-view">
+          <div className="glass-card animate-fade-in quiz-card" id="quiz-card-view">
             {/* プログレスバー & 10秒タイマー & 質問ごとの回答者数 */}
             <div className="quiz-progress-bar">
               <div className="progress-header">
@@ -342,7 +342,8 @@ export const App: React.FC = () => {
                 <div />
               )}
 
-              <span className="enter-key-guide">
+              {/* 「Enterキー」の案内はキーボードのない端末では出さない（is-keyboard-hint） */}
+              <span className={`enter-key-guide ${!submitError && !isTimeUpNotice && !isSubmitting ? 'is-keyboard-hint' : ''}`}>
                 {submitError
                   ? ''
                   : isTimeUpNotice

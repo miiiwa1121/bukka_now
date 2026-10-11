@@ -236,13 +236,6 @@ body.detailed-view-active {
   gap: 0.55rem;
 }
 
-@media (max-width: 520px) {
-  .count-chips-grid {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 0.35rem;
-  }
-}
-
 /* 出題数チップボタン */
 .count-chip-btn {
   background: var(--bg-surface);
@@ -564,6 +557,13 @@ body.detailed-view-active {
   color: var(--ink-muted);
   margin-top: 0.35rem;
   text-align: right;
+}
+
+/* テンキー＋決定ボタン（ディスプレイとの間隔と同じ間隔で縦に並べる） */
+.numpad-keys-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
 }
 
 /* テンキーグリッド */
@@ -1485,12 +1485,14 @@ body.detailed-view-active {
   --gap-nav-size: 104px;
 }
 
+/* スマホ：カードを画面幅いっぱい（左右12px）にし、隣のカードは画面外に置く。
+   面の切り替えはカード間ボタンではなく、画面の左下・右下に固定したボタン（.board-edge-nav）で行う */
 @media (max-width: 640px) {
   .whiteboard-stage {
-    --card-width: calc(100vw - 80px);
-    --card-peek: 36px;
-    --btn-offset: calc(25vw + (var(--card-width) / 4) - (var(--card-peek) / 2));
-    --gap-nav-size: 68px;
+    --card-width: calc(100vw - 24px);
+    --rail-gap: 24px;
+    /* 1面ぶんの移動量（カード幅 + 隙間）の半分。レールは -2倍 / -4倍 で動く */
+    --btn-offset: calc((var(--card-width) + var(--rail-gap)) / 2);
   }
 }
 
@@ -2430,3 +2432,557 @@ body.detailed-view-active {
   font-size: 0.88rem;
 }
 
+/* ==========================================================================
+   スマートフォン調整
+   - 幅640px以下: 余白・文字サイズを詰め、入れ子の枠で本文が細くならないようにする
+   - クイズは 375×667 程度の画面で、設問からテンキー・決定ボタンまでスクロールせずに収める
+   - キーボードのない端末（hover: none）では、キーボード操作の案内を出さない
+   ========================================================================== */
+
+/* ダブルタップ拡大を無効化し、テンキーを素早く連打しても拡大されないようにする */
+button,
+a {
+  touch-action: manipulation;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* 面切り替えボタン（スマホのみ表示） */
+.board-edge-nav {
+  display: none;
+}
+
+@media (hover: none) {
+  .numpad-input-hint,
+  .enter-key-guide.is-keyboard-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  /* 共通 */
+  .app-container {
+    padding: 0.75rem 0.75rem 2rem;
+  }
+
+  .app-header {
+    padding: 0;
+    margin-bottom: 0.9rem;
+  }
+
+  .brand-badge {
+    gap: 0.5rem;
+    padding: 0.3rem 0.85rem 0.3rem 0.45rem;
+  }
+
+  .brand-title {
+    font-size: 1.1rem;
+  }
+
+  .glass-card {
+    padding: 1.1rem 0.9rem;
+  }
+
+  .app-footer {
+    margin-top: 1.75rem;
+  }
+
+  /* トップ */
+  .landing-minimal {
+    padding: 1.75rem 0.9rem 1.5rem;
+  }
+
+  .participants-stat-pill {
+    margin-bottom: 1.25rem;
+    font-size: 0.8rem;
+  }
+
+  .minimal-title {
+    font-size: 1.7rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .minimal-desc {
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .minimal-selector-box {
+    padding: 1rem 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .minimal-selector-label {
+    margin-bottom: 0.75rem;
+  }
+
+  .count-chips-grid {
+    gap: 0.4rem;
+  }
+
+  .count-chip-btn {
+    min-width: 0;
+    padding: 0.6rem 0;
+    gap: 0.1rem;
+  }
+
+  .chip-num {
+    font-size: 1.05rem;
+  }
+
+  .chip-unit {
+    font-size: 0.65rem;
+  }
+
+  .minimal-start-btn {
+    padding: 1rem 1.25rem;
+    font-size: 1.05rem;
+  }
+
+  /* クイズ */
+  .quiz-progress-bar {
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .progress-header {
+    gap: 0.4rem;
+    white-space: nowrap;
+  }
+
+  .progress-step,
+  .question-respondents-tag {
+    padding: 0.15rem 0.55rem;
+    font-size: 0.74rem;
+  }
+
+  /* 残り秒数は数字とゲージで分かるので、「制限時間」の見出しは省く */
+  .quiz-timer-badge {
+    padding: 0.15rem 0.7rem;
+  }
+
+  .quiz-timer-badge .timer-label {
+    display: none;
+  }
+
+  .quiz-timer-badge .timer-seconds {
+    font-size: 0.95rem;
+  }
+
+  .quiz-header-minimal {
+    margin-bottom: 0.9rem;
+  }
+
+  .question-title-clean {
+    font-size: 1.15rem;
+    line-height: 1.4;
+  }
+
+  .question-subtitle-clean {
+    margin-top: 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  .numpad-container {
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .numpad-display-box {
+    padding: 0.55rem 1rem 0.6rem;
+  }
+
+  .numpad-display-label {
+    font-size: 0.72rem;
+    margin-bottom: 0;
+  }
+
+  .numpad-display-digits {
+    font-size: 2.3rem;
+  }
+
+  .numpad-display-unit {
+    font-size: 1.1rem;
+  }
+
+  .numpad-key-grid {
+    gap: 0.5rem;
+  }
+
+  .numpad-key {
+    height: 52px;
+    font-size: 1.5rem;
+  }
+
+  .numpad-ok-btn {
+    height: 52px;
+    margin-top: 0.1rem;
+    font-size: 1.1rem;
+  }
+
+  /* 「前へ戻る」の有無で決定ボタンの位置が動かないよう、行の高さを固定する */
+  .quiz-actions-minimal {
+    min-height: calc(36px + 0.6rem);
+    padding-top: 0.6rem;
+    margin-top: 0;
+  }
+
+  .quiz-actions-minimal .btn-subtle {
+    padding: 0.4rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  /* 結果: スコアカード */
+  .result-independent-score-card-wrap {
+    padding: 0;
+    margin-bottom: 1rem;
+  }
+
+  .result-hero-simple {
+    padding: 1.4rem 0.9rem 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .result-sub-label {
+    font-size: 0.88rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .percentile-simple-val {
+    gap: 0.3rem;
+    margin-bottom: 1rem;
+    white-space: nowrap;
+  }
+
+  .percentile-tag {
+    font-size: 1.2rem;
+  }
+
+  .percentile-number {
+    font-size: 4.2rem;
+  }
+
+  .percentile-unit {
+    font-size: 1.8rem;
+  }
+
+  .result-summary-tags {
+    gap: 0.5rem;
+  }
+
+  .summary-pill {
+    padding: 0.3rem 0.9rem;
+    font-size: 0.82rem;
+  }
+
+  .result-intense-comment {
+    margin-top: 1.1rem;
+    padding: 0.9rem 0.85rem;
+  }
+
+  .comment-punchline,
+  .result-intense-comment.comment-perfect-100 .comment-punchline,
+  .result-intense-comment.comment-zero-point .comment-punchline {
+    font-size: 1.2rem;
+  }
+
+  .comment-body {
+    font-size: 0.86rem;
+    text-align: left;
+  }
+
+  /* シェア・コピーを横並び、もう一度挑戦するを全幅に */
+  .result-top-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .result-top-actions .btn-action-top {
+    height: 44px;
+    line-height: 1;
+    padding: 0 0.5rem;
+    font-size: 0.84rem;
+  }
+
+  .result-top-actions .btn-retry-top {
+    grid-column: 1 / -1;
+  }
+
+  /* 結果: 面切り替えボタン。画面の左下・右下に固定し、最前面に置く。
+     画面の端に接する側はまっすぐ、内側は半円（U 字を横にした形）。行き先がない側は画面外へ引っ込める */
+  .board-edge-nav {
+    display: block;
+  }
+
+  .board-edge-btn {
+    position: fixed;
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    z-index: 2147483647;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    height: 52px;
+    background: var(--unpis-red);
+    color: #ffffff;
+    border: var(--border-thick);
+    font-family: var(--font-sans);
+    font-size: 0.86rem;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.15s ease;
+  }
+
+  .board-edge-btn svg {
+    flex-shrink: 0;
+  }
+
+  .board-edge-btn.is-prev {
+    left: 0;
+    padding: 0 1.1rem 0 0.75rem;
+    border-left: none;
+    border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+  }
+
+  .board-edge-btn.is-next {
+    right: 0;
+    padding: 0 0.75rem 0 1.1rem;
+    border-right: none;
+    border-radius: var(--radius-pill) 0 0 var(--radius-pill);
+  }
+
+  .board-edge-btn:active {
+    background: var(--unpis-red-hover);
+  }
+
+  .board-edge-btn:focus-visible {
+    outline: 3px solid var(--unpis-blue);
+    outline-offset: 2px;
+  }
+
+  .board-edge-btn.is-prev.is-hidden {
+    transform: translateX(calc(-100% - 8px));
+    pointer-events: none;
+  }
+
+  .board-edge-btn.is-next.is-hidden {
+    transform: translateX(calc(100% + 8px));
+    pointer-events: none;
+  }
+
+  /* 最下部（もう一度挑戦する・フッター）がボタンに隠れないよう、ページ末尾に余白を足す */
+  .app-container:has(.board-edge-nav) {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .panel-gap-nav {
+    display: none;
+  }
+
+  /* 結果: 各面のカード */
+  .whiteboard-panel > .whiteboard-card-wrapper > .glass-card {
+    padding: 0.9rem 0.6rem;
+  }
+
+  .questions-result-list {
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .result-section-header {
+    font-size: 0.98rem;
+    padding: 0 0.25rem 0.5rem;
+  }
+
+  .unified-board-cards-list {
+    gap: 1rem;
+  }
+
+  .unpis-question-card,
+  .detailed-plot-card,
+  .trend-chart-card,
+  .result-question-card {
+    padding: 0.9rem 0.8rem;
+  }
+
+  .unified-card-header {
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .unified-metrics-grid,
+  .unified-metrics-grid.grid-five {
+    margin-bottom: 0.9rem;
+  }
+
+  .result-bottom-actions {
+    padding-top: 0.5rem;
+  }
+
+  .dist-chart-legend {
+    gap: 0.25rem 0.6rem;
+  }
+}
+
+/* 幅360px以下（iPhone SE 第1世代など）: クイズ上部の3つのピルを1行に収める（収まらなければ折り返す） */
+@media (max-width: 360px) {
+  .progress-header {
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
+  }
+
+  .progress-step,
+  .question-respondents-tag {
+    padding: 0.12rem 0.45rem;
+    font-size: 0.68rem;
+  }
+
+  .quiz-timer-badge {
+    padding: 0.12rem 0.55rem;
+  }
+
+  .minimal-title {
+    font-size: 1.5rem;
+  }
+}
+
+/* 縦が短いスマホ（高さ740px以下）: テンキーと決定ボタンがスクロールせずに見えるよう、さらに詰める */
+@media (max-width: 640px) and (max-height: 740px) {
+  .app-header {
+    margin-bottom: 0.6rem;
+  }
+
+  .quiz-progress-bar {
+    margin-bottom: 0.75rem;
+  }
+
+  .quiz-header-minimal {
+    margin-bottom: 0.7rem;
+  }
+
+  .question-title-clean {
+    font-size: 1.05rem;
+  }
+
+  .numpad-container {
+    gap: 0.5rem;
+  }
+
+  .numpad-display-box {
+    padding: 0.4rem 0.9rem 0.45rem;
+  }
+
+  .numpad-display-digits {
+    font-size: 2rem;
+  }
+
+  .numpad-key-grid {
+    gap: 0.45rem;
+  }
+
+  .numpad-key {
+    height: 46px;
+    font-size: 1.4rem;
+  }
+
+  .numpad-ok-btn {
+    height: 48px;
+  }
+}
+
+/* ==========================================================================
+   PC（幅641px以上）のクイズ画面: スクロールなしで1画面に収める
+   - 左の列に設問とディスプレイ、右の列にテンキーと決定ボタンを並べる（横に広い画面を使い、縦を短くする）
+   - キーの高さは画面の高さに合わせて 40〜60px で伸び縮みさせる
+   ========================================================================== */
+@media (min-width: 641px) {
+  /* クイズ中はフッターがないので、ページ下とヘッダー下の余白を詰める */
+  .app-container:has(.quiz-card) {
+    padding-bottom: 1rem;
+  }
+
+  .app-container:has(.quiz-card) .app-header {
+    margin-bottom: 1rem;
+  }
+
+  .quiz-card {
+    /* 100vh から、キー以外の高さ（ヘッダー・進捗・余白・前へ戻る など約380px）を引いて5段（キー4段＋決定）で割る */
+    --key-h: clamp(40px, calc((100vh - 380px) / 5), 60px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr auto auto;
+    grid-template-areas:
+      "progress progress"
+      "question keys"
+      "display  keys"
+      "notice   notice"
+      "actions  actions";
+    column-gap: 2rem;
+    padding: 1.5rem 2rem 1.25rem;
+  }
+
+  .quiz-card .quiz-progress-bar {
+    grid-area: progress;
+    margin-bottom: 1.25rem;
+  }
+
+  .quiz-card .quiz-header-minimal {
+    grid-area: question;
+    margin-bottom: 1rem;
+    text-align: left;
+  }
+
+  .quiz-card .question-title-clean {
+    font-size: 1.6rem;
+    line-height: 1.4;
+  }
+
+  /* ディスプレイとテンキーを別々の列に置くため、包んでいる箱をなくす */
+  .quiz-card .numpad-container {
+    display: contents;
+  }
+
+  /* ディスプレイは左の列の下端（決定ボタンの高さ）にそろえる */
+  .quiz-card .numpad-display-box {
+    grid-area: display;
+    align-self: end;
+  }
+
+  .quiz-card .numpad-display-digits {
+    font-size: 3rem;
+  }
+
+  .quiz-card .numpad-keys-wrap {
+    grid-area: keys;
+  }
+
+  .quiz-card .numpad-key-grid {
+    gap: 0.6rem;
+  }
+
+  .quiz-card .numpad-key {
+    height: var(--key-h);
+  }
+
+  .quiz-card .numpad-ok-btn {
+    height: var(--key-h);
+    margin-top: 0;
+  }
+
+  .quiz-card .inline-notice {
+    grid-area: notice;
+  }
+
+  .quiz-card .quiz-actions-minimal {
+    grid-area: actions;
+    margin-top: 1rem;
+    padding-top: 0.8rem;
+  }
+}

@@ -83,68 +83,71 @@ export const NumberKeypad: React.FC<NumberKeypadProps> = ({
           </span>
           <span className="numpad-display-unit">{unit}</span>
         </div>
-        <span className="numpad-input-hint">キーボードまたは下記のテンキーで入力</span>
+        <span className="numpad-input-hint">キーボードまたはテンキーで入力</span>
       </div>
 
-      {/* テンキーパッド */}
-      <div className="numpad-key-grid">
-        {digits.map((d) => (
+      {/* テンキーと決定ボタン（PC ではディスプレイの右の列に並べる） */}
+      <div className="numpad-keys-wrap">
+        {/* テンキーパッド */}
+        <div className="numpad-key-grid">
+          {digits.map((d) => (
+            <button
+              key={d}
+              type="button"
+              className="numpad-key"
+              id={`btn-num-${d}`}
+              onClick={() => handleDigit(d)}
+              disabled={disabled}
+            >
+              {d}
+            </button>
+          ))}
+
+          {/* クリアボタン */}
           <button
-            key={d}
             type="button"
-            className="numpad-key"
-            id={`btn-num-${d}`}
-            onClick={() => handleDigit(d)}
+            className="numpad-key action-clear"
+            id="btn-num-clear"
+            onClick={handleClear}
             disabled={disabled}
           >
-            {d}
+            C
           </button>
-        ))}
 
-        {/* クリアボタン */}
+          {/* 0ボタン */}
+          <button
+            type="button"
+            className="numpad-key"
+            id="btn-num-0"
+            onClick={() => handleDigit(0)}
+            disabled={disabled}
+          >
+            0
+          </button>
+
+          {/* バックスペースボタン */}
+          <button
+            type="button"
+            className="numpad-key action-backspace"
+            id="btn-num-backspace"
+            onClick={handleBackspace}
+            disabled={disabled}
+          >
+            BS
+          </button>
+        </div>
+
+        {/* OKボタン */}
         <button
           type="button"
-          className="numpad-key action-clear"
-          id="btn-num-clear"
-          onClick={handleClear}
-          disabled={disabled}
+          className="btn-primary numpad-ok-btn"
+          id="btn-num-ok"
+          onClick={onSubmit}
+          disabled={value <= 0 || disabled}
         >
-          C
-        </button>
-
-        {/* 0ボタン */}
-        <button
-          type="button"
-          className="numpad-key"
-          id="btn-num-0"
-          onClick={() => handleDigit(0)}
-          disabled={disabled}
-        >
-          0
-        </button>
-
-        {/* バックスペースボタン */}
-        <button
-          type="button"
-          className="numpad-key action-backspace"
-          id="btn-num-backspace"
-          onClick={handleBackspace}
-          disabled={disabled}
-        >
-          BS
+          <span>決定（OK）</span>
         </button>
       </div>
-
-      {/* OKボタン */}
-      <button
-        type="button"
-        className="btn-primary numpad-ok-btn"
-        id="btn-num-ok"
-        onClick={onSubmit}
-        disabled={value <= 0 || disabled}
-      >
-        <span>決定（OK）</span>
-      </button>
     </div>
   );
 };

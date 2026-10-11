@@ -124,7 +124,10 @@ export const PriceTrendChart: React.FC<PriceTrendChartProps> = ({ item, question
   const yearTicks = getYearTicks(first.year, last.year);
   // 狭い画面で非表示にする年（10年刻みは20年ごと、1年刻みは最新年から1年おきだけ残す）
   const isMinorTick = (year: number) =>
-    (yearTicks.interval === 10 && year % 20 !== 0) || (yearTicks.interval === 1 && (last.year - year) % 2 === 1);
+    (yearTicks.interval === 10 && year % 20 !== 0) ||
+    (yearTicks.interval === 5 && year % 10 !== 0) ||
+    (yearTicks.interval === 2 && year % 4 !== 0) ||
+    (yearTicks.interval === 1 && (last.year - year) % 2 === 1);
   const selected = history[selectedIndex];
   const selectedX = toXPercent(selected.year);
   const selectedY = toYPercent(selected.price);
