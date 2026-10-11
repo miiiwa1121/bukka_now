@@ -300,49 +300,52 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      <footer className="app-footer">
-        <div className="footer-brand">
-          <span className="footer-logo">bukka_now</span>
-          <span className="footer-tagline">物価意識調査</span>
-        </div>
-
-        <dl className="footer-info">
-          <div className="footer-info-row">
-            <dt>開発者</dt>
-            <dd className="footer-links">
-              <a href="https://x.com/miiiwa3330" target="_blank" rel="noopener noreferrer">
-                X: @miiiwa3330
-              </a>
-              <a href="https://github.com/miiiwa3330/" target="_blank" rel="noopener noreferrer">
-                GitHub: @miiiwa3330
-              </a>
-            </dd>
+      {/* クイズ回答中は集中できるようフッターを出さない（トップ・結果画面のみ表示） */}
+      {view !== 'quiz' && (
+        <footer className="app-footer">
+          <div className="footer-brand">
+            <span className="footer-logo">bukka_now</span>
+            <span className="footer-tagline">物価意識調査</span>
           </div>
-          <div className="footer-info-row">
-            <dt>ソースコード</dt>
-            <dd>
-              <a href="https://github.com/miiiwa3330/bukka_now" target="_blank" rel="noopener noreferrer">
-                GitHub: miiiwa3330/bukka_now
-              </a>
-            </dd>
-          </div>
-          <div className="footer-info-row">
-            <dt>価格の出典</dt>
-            <dd>
-              <a href="https://www.stat.go.jp/data/kouri/index.html" target="_blank" rel="noopener noreferrer">
-                総務省統計局「小売物価統計調査」
-              </a>
-              （東京都区部の年平均価格）
-            </dd>
-          </div>
-        </dl>
 
-        <p className="footer-note">
-          正解価格は東京都区部の2025年平均（郵便・NHK受信料・新聞・映画は全国統一価格）で、地域や店舗によって異なります。回答は個人を特定しない形で集計されます。
-        </p>
+          <dl className="footer-info">
+            <div className="footer-info-row">
+              <dt>開発者</dt>
+              <dd className="footer-links">
+                <a href="https://x.com/miiiwa3330" target="_blank" rel="noopener noreferrer">
+                  X: @miiiwa3330
+                </a>
+                <a href="https://github.com/miiiwa3330/" target="_blank" rel="noopener noreferrer">
+                  GitHub: @miiiwa3330
+                </a>
+              </dd>
+            </div>
+            <div className="footer-info-row">
+              <dt>ソースコード</dt>
+              <dd>
+                <a href="https://github.com/miiiwa3330/bukka_now" target="_blank" rel="noopener noreferrer">
+                  GitHub: miiiwa3330/bukka_now
+                </a>
+              </dd>
+            </div>
+            <div className="footer-info-row">
+              <dt>価格の出典</dt>
+              <dd>
+                <a href="https://www.stat.go.jp/data/kouri/index.html" target="_blank" rel="noopener noreferrer">
+                  総務省統計局「小売物価統計調査」
+                </a>
+                （東京都区部の年平均価格）
+              </dd>
+            </div>
+          </dl>
 
-        <p className="footer-copyright">© 2026 bukka_now</p>
-      </footer>
+          <p className="footer-note">
+            正解価格は東京都区部の2025年平均（郵便・NHK受信料・新聞・映画は全国統一価格）で、地域や店舗によって異なります。回答は個人を特定しない形で集計されます。
+          </p>
+
+          <p className="footer-copyright">© 2026 bukka_now</p>
+        </footer>
+      )}
     </div>
   );
 };
