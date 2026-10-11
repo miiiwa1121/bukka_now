@@ -227,40 +227,32 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
 
   return (
     <div className={`whiteboard-stage ${activeBoard === 'detailed' ? 'is-detailed-active' : ''}`} id="result-dashboard-view">
-      {/* 画面中央・カード横に固定配置される特大（今の4倍サイズ）矢印ナビゲーションボタン */}
-      {activeBoard === 'summary' && (
-        <button
-          type="button"
-          className="whiteboard-fixed-nav-btn next-arrow"
-          onClick={() => handleGoToDetail(0)}
-          aria-label="データ詳細へ進む"
-          title="データ詳細へ進む"
-          id="btn-slide-next-arrow"
-        >
-          <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-          <span className="fixed-nav-label">詳細データ</span>
-        </button>
-      )}
-
-      {activeBoard === 'detailed' && (
-        <button
-          type="button"
-          className="whiteboard-fixed-nav-btn prev-arrow"
-          onClick={handleBackToSummary}
-          aria-label="診断サマリーに戻る"
-          title="診断サマリーに戻る"
-          id="btn-slide-prev-arrow"
-        >
-          <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-          </svg>
-          <span className="fixed-nav-label">サマリー</span>
-        </button>
-      )}
+      {/* 画面中央・カードとカードの真ん中に配置され、カードの移動と完全に同時に同期移動する赤色特大ナビボタン（黒縁・影なし） */}
+      <button
+        type="button"
+        className={`whiteboard-fixed-nav-btn ${activeBoard === 'detailed' ? 'is-detailed' : 'is-summary'}`}
+        onClick={activeBoard === 'summary' ? () => handleGoToDetail(0) : handleBackToSummary}
+        aria-label={activeBoard === 'summary' ? 'データ詳細へ進む' : '診断サマリーに戻る'}
+        title={activeBoard === 'summary' ? 'データ詳細へ進む' : '診断サマリーに戻る'}
+        id="btn-slide-nav-toggle"
+      >
+        <div className="fixed-nav-icon-wrapper">
+          {activeBoard === 'summary' ? (
+            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#ffffff" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#ffffff" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          )}
+        </div>
+        <span className="fixed-nav-label">
+          {activeBoard === 'summary' ? '詳細データ' : 'サマリー'}
+        </span>
+      </button>
 
       {/* ホワイトボードスライドラック（横スライドコンテナ） */}
       <div className="whiteboard-track-viewport">

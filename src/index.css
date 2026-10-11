@@ -1385,12 +1385,15 @@ body.detailed-view-active {
   overflow: hidden;
   --card-width: min(760px, calc(100vw - 120px));
   --card-peek: 90px;
+  /* 画面中央からカード間の隙間中央までのオフセット距離 */
+  --btn-offset: calc(25vw + (var(--card-width) / 4) - (var(--card-peek) / 2));
 }
 
 @media (max-width: 640px) {
   .whiteboard-stage {
     --card-width: calc(100vw - 80px);
     --card-peek: 36px;
+    --btn-offset: calc(25vw + (var(--card-width) / 4) - (var(--card-peek) / 2));
   }
 }
 
@@ -1413,9 +1416,9 @@ body.detailed-view-active {
   will-change: transform;
 }
 
-/* 詳細画面表示時：詳細カードが画面中央へ来る距離だけ左へスライド */
+/* 詳細画面表示時：詳細カードが画面中央へ来る距離だけ左へスライド（ボタンの移動量と完全一致） */
 .whiteboard-sliding-rail.is-detailed-active {
-  transform: translateX(calc(-1 * (50vw + (var(--card-width) / 2) - var(--card-peek))));
+  transform: translateX(calc(-2 * var(--btn-offset)));
 }
 
 .whiteboard-panel {
@@ -1432,11 +1435,12 @@ body.detailed-view-active {
 }
 
 /* ==========================================================================
-   特大矢印ナビゲーションボタン（赤背景・白文字・影なし・カードとカードの真ん中に配置）
+   特大矢印ナビゲーションボタン（赤背景・白文字・黒枠なし・影なし・カードと完全同期移動）
    ========================================================================== */
 .whiteboard-fixed-nav-btn {
   position: fixed;
   top: 50%;
+  left: 50vw;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1445,20 +1449,29 @@ body.detailed-view-active {
   width: 104px;
   height: 104px;
   background: var(--unpis-red);
-  border: 3px solid var(--ink-black);
+  border: none;
   border-radius: 50%;
   box-shadow: none;
   cursor: pointer;
   color: #ffffff;
   z-index: 100;
   user-select: none;
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+  /* レールの移動と完全に同じ時間・同じイージングで同期移動 */
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), 
               background-color 0.15s ease;
+  will-change: transform;
 }
 
 .whiteboard-fixed-nav-btn svg {
   display: block;
   stroke: #ffffff;
+}
+
+.whiteboard-fixed-nav-btn .fixed-nav-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
 }
 
 .whiteboard-fixed-nav-btn .fixed-nav-label {
@@ -1469,36 +1482,39 @@ body.detailed-view-active {
   line-height: 1;
 }
 
-/* サマリー表示時：サマリーカードとチラ見え詳細カードの「真ん中」に配置 */
-.whiteboard-fixed-nav-btn.next-arrow {
-  left: calc(75vw + (var(--card-width) / 4) - (var(--card-peek) / 2));
-  transform: translate(-50%, -50%);
+/* サマリー表示時：カード1とカード2の間の隙間中央（右側）に配置 */
+.whiteboard-fixed-nav-btn.is-summary {
+  transform: translate(calc(var(--btn-offset) - 50%), -50%);
 }
 
-/* 詳細表示時：チラ見えサマリーカードと詳細カードの「真ん中」に配置 */
-.whiteboard-fixed-nav-btn.prev-arrow {
-  left: calc(25vw - (var(--card-width) / 4) + (var(--card-peek) / 2));
-  transform: translate(-50%, -50%);
+/* 詳細表示時：カード1とカード2の間の隙間中央（左側）に配置 */
+.whiteboard-fixed-nav-btn.is-detailed {
+  transform: translate(calc(-1 * var(--btn-offset) - 50%), -50%);
 }
 
-/* ホバー時のリアクション（影なしを徹底維持） */
+/* ホバー時のリアクション（影なし維持、アイコンの微小スライド） */
 .whiteboard-fixed-nav-btn:hover {
   background: var(--unpis-red-hover);
   box-shadow: none;
 }
 
-.whiteboard-fixed-nav-btn.next-arrow:hover {
-  transform: translate(-46%, -50%);
+.whiteboard-fixed-nav-btn.is-summary:hover .fixed-nav-icon-wrapper {
+  transform: translateX(4px);
 }
 
-.whiteboard-fixed-nav-btn.prev-arrow:hover {
-  transform: translate(-54%, -50%);
+.whiteboard-fixed-nav-btn.is-detailed:hover .fixed-nav-icon-wrapper {
+  transform: translateX(-4px);
 }
 
 /* クリック（押し込み）時 */
-.whiteboard-fixed-nav-btn:active {
+.whiteboard-fixed-nav-btn.is-summary:active {
   box-shadow: none;
-  transform: translate(-50%, -50%) scale(0.96);
+  transform: translate(calc(var(--btn-offset) - 50%), -50%) scale(0.95);
+}
+
+.whiteboard-fixed-nav-btn.is-detailed:active {
+  box-shadow: none;
+  transform: translate(calc(-1 * var(--btn-offset) - 50%), -50%) scale(0.95);
 }
 
 /* スマホ表示（幅640px以下）：カード間に合わせてサイズ調整 */
@@ -1506,7 +1522,7 @@ body.detailed-view-active {
   .whiteboard-fixed-nav-btn {
     width: 68px;
     height: 68px;
-    border-width: 2.5px;
+    border: none;
     box-shadow: none;
     gap: 0.15rem;
   }
