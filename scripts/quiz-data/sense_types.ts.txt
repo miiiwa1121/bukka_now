@@ -1,0 +1,30 @@
+export const SENSE_TYPES: Record<string, SenseTypeInfo> = {
+  master: {
+    code: 'master',
+    name: 'リアルタイム相場マスター',
+    tagline: 'インフレの波を完全に見抜く！ 現代のリアル相場感覚の達人',
+    description: '公的価格とのズレが極めて少なく、近年の物価上昇や価格改定を正確に把握できています。スマートな買い物と的確な金銭感覚の持ち主です。',
+    badgeColor: '#10b981',
+  },
+  timeslip: {
+    code: 'timeslip',
+    name: '過去価格タイムスリップ型',
+    tagline: 'あの頃の安さが忘れられない… 過去の記憶に引っ張られ気味',
+    description: '多くの品目を実際より安く見積もる傾向があります。数年前の相場記憶のままで、実際のレジや請求で「あれ、高い？」と驚くことが多いタイプです。',
+    badgeColor: '#3b82f6',
+  },
+  panic: {
+    code: 'panic',
+    name: 'インフレ過敏型',
+    tagline: '「何もかも高すぎる…！」 ニュースの印象で高めに見積もりがち',
+    description: '実際の相場よりもかなり高めに見積もる傾向があります。連日の値上げ報道やインフレのニュースの影響で、実勢相場以上に割高感を体感しています。',
+    badgeColor: '#f59e0b',
+  },
+  rough: {
+    code: 'rough',
+    name: '大らか直感型',
+    tagline: '細かい金額は気にしない！ 直感と大らかさで生きるマイペース派',
+    description: '品目によって高低のブレが大きく、相場の細かい数字よりも直感で生活しているタイプです。',
+    badgeColor: '#8b5cf6',
+  },
+};

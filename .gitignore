@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 .wrangler
 
+
+# クイズデータ生成の作業ディレクトリ
+scripts/quiz-data/.work
+__pycache__

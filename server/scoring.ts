@@ -181,8 +181,7 @@ export function calculateQuizResult(
       score: questionScore,
       errorRate: Number(errorRate.toFixed(3)),
       priceNote: q.priceNote,
-      pastPrice: q.pastPrice,
-      pastPriceYear: q.pastPriceYear,
+      priceHistory: q.priceHistory,
       distribution,
       rawAnswers,
     });

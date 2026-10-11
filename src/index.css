@@ -485,6 +485,14 @@ body.detailed-view-active {
   color: var(--ink-black);
 }
 
+/* 価格の前提（地域・年・出典） */
+.question-subtitle-clean {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-subtle);
+}
+
 /* テンキーコンテナ */
 .numpad-container {
   max-width: 360px;
@@ -1332,10 +1340,97 @@ body.detailed-view-active {
 /* App Footer */
 .app-footer {
   margin-top: 2.5rem;
-  text-align: center;
+  padding: 1.5rem 1.5rem 1.25rem;
+  background: var(--bg-surface);
+  border: var(--border-thick);
+  border-radius: var(--radius-md);
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--ink-subtle);
+}
+
+.footer-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding-bottom: 0.9rem;
+  margin-bottom: 0.9rem;
+  border-bottom: var(--border-thin);
+}
+
+.footer-logo {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--ink-black);
+  letter-spacing: 0.02em;
+}
+
+.footer-tagline {
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+}
+
+.footer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.footer-info-row {
+  display: grid;
+  grid-template-columns: 7.5em minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.footer-info dt {
+  color: var(--ink-muted);
+}
+
+.footer-info dd {
+  color: var(--ink-black);
+  overflow-wrap: anywhere;
+}
+
+.app-footer a {
+  color: var(--ink-black);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
+
+.app-footer a:hover {
+  color: var(--unpis-red);
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+}
+
+.footer-note {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.7;
+  color: var(--ink-muted);
+}
+
+.footer-copyright {
+  margin-top: 0.9rem;
+  font-size: 0.75rem;
+  color: var(--ink-subtle);
+}
+
+@media (max-width: 640px) {
+  .app-footer {
+    padding: 1.25rem 1rem 1rem;
+  }
+
+  .footer-info-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
 }
 
 /* アニメーション */
@@ -1837,7 +1932,8 @@ body.detailed-view-active {
 .vplot-scroll.trend-plot {
   --vplot-axis-w: 4.2rem;        /* 金額ラベル（例: 12,800円）が収まる幅 */
   --vplot-top-room: 1.9rem;      /* 最上部の地点でも吹き出しが収まる余白 */
-  overflow-x: visible;
+  /* 横スクロールしないので両方向 visible（片方だけ hidden だと visible が auto 扱いになり端の点が切れる） */
+  overflow: visible;
 }
 
 @media (max-width: 640px) {
@@ -1871,8 +1967,64 @@ body.detailed-view-active {
   vector-effect: non-scaling-stroke; /* viewBox を引き伸ばしても線幅を一定に保つ */
 }
 
+/* 押す・なぞる・←→キーで年を選ぶ領域 */
+.trend-hit-area {
+  cursor: crosshair;
+  touch-action: pan-y; /* 縦スクロールは妨げない */
+  outline: none;
+}
+
+.trend-hit-area:focus-visible {
+  outline: 2px solid var(--unpis-blue);
+  outline-offset: 2px;
+}
+
+/* 選択中の年の縦線 */
+.trend-cursor-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed var(--ink-black);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* X軸の年ラベル（年に比例した位置に置く） */
+.vplot-x-labels.trend-x-labels {
+  position: relative;
+  display: block;
+}
+
+.trend-x-label {
+  position: absolute;
+  bottom: 0;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink-black);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .trend-x-label {
+    font-size: 0.62rem;
+  }
+  .trend-x-label.is-minor {
+    display: none;
+  }
+}
+
+/* 推移の期間（グラフ見出しの右側） */
+.trend-period-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--ink-subtle);
+}
+
 /* 押せる地点（当たり判定は 28px、見た目の点は ::before） */
 .trend-point {
+  pointer-events: none;
   position: absolute;
   width: 28px;
   height: 28px;
@@ -1947,21 +2099,21 @@ body.detailed-view-active {
   transform: translate(-50%, calc(100% + 14px));
 }
 
-/* 左端・右端の地点ではグラフ外にはみ出さないよう寄せる */
+/* 左端・右端の地点ではグラフ外にはみ出さないよう、地点を起点に内側へ寄せる */
 .trend-tooltip.align-start {
-  transform: translate(-20%, -14px);
+  transform: translate(-6px, -14px);
 }
 
 .trend-tooltip.align-end {
-  transform: translate(-80%, -14px);
+  transform: translate(calc(-100% + 6px), -14px);
 }
 
 .trend-tooltip.align-start.is-below {
-  transform: translate(-20%, calc(100% + 14px));
+  transform: translate(-6px, calc(100% + 14px));
 }
 
 .trend-tooltip.align-end.is-below {
-  transform: translate(-80%, calc(100% + 14px));
+  transform: translate(calc(-100% + 6px), calc(100% + 14px));
 }
 
 @media (max-width: 640px) {

@@ -2,22 +2,27 @@
 
 export type CategoryType = 'food' | 'dining' | 'daily' | 'infrastructure' | 'service' | 'goods';
 
+// 価格推移の1点（年平均価格。単位は設問の単位に換算済み）
+export interface PricePoint {
+  year: number;
+  price: number;
+}
+
 export interface QuestionData {
-  id: string;
+  id: string;           // 's' + 小売物価統計調査の銘柄符号（例: s1001）
   category: CategoryType;
   categoryLabel: string;
   title: string;
-  subtitle: string;
+  subtitle: string;     // 価格の前提（地域・年・出典）
   unit: string;
-  actualPrice: number;
-  pastPrice: number;
-  pastPriceYear: string;
-  priceNote: string;
+  actualPrice: number;  // 正解（東京都区部・2025年平均）
+  priceHistory: PricePoint[]; // 年平均価格の推移（古い順、最後が 2025年）
+  priceNote: string;    // コラム（調査銘柄と推移の要約）
 }
 
 // クライアントへ送信する設問データ
-// カンニング防止のため、正解（actualPrice）・解説（priceNote）・正解のヒントになる値（pastPrice, 世間平均）は除外
-export type PublicQuestion = Omit<QuestionData, 'actualPrice' | 'priceNote' | 'pastPrice' | 'pastPriceYear'> & {
+// カンニング防止のため、正解（actualPrice）・解説（priceNote）・正解のヒントになる値（priceHistory, 世間平均）は除外
+export type PublicQuestion = Omit<QuestionData, 'actualPrice' | 'priceNote' | 'priceHistory'> & {
   totalResponses: number; // 質問ごとの回答者数
 };
 
@@ -61,8 +66,7 @@ export interface QuestionResultItem {
   score: number;
   errorRate: number;
   priceNote: string;
-  pastPrice: number;     // 過去（2020年等）の基準価格
-  pastPriceYear: string; // 過去の年度（例: '2020年'）
+  priceHistory: PricePoint[]; // 年平均価格の推移（古い順、最後が正解の年）
   distribution: DistributionBin[];
   rawAnswers: number[];  // 各回答者の生回答値（直近最大500件＋今回の回答。1単位プロット用）
 }

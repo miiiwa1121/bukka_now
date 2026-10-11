@@ -57,8 +57,9 @@ bukka_now/
 │   │   ├── DetailedPlotChart.tsx     # 面2: 1単位プロット
 │   │   ├── PriceTrendChart.tsx       # 面3: 物価推移折れ線（SVG）
 │   │   └── PriceNoteColumn.tsx       # 3面共通の「コラム」（priceNote）
-│   ├── data/quizMaster.ts      # 100問マスター（正解価格・解説含む）＋ SENSE_TYPES
+│   ├── data/quizMaster.ts      # 100問マスター（正解価格・推移・コラム）＋ SENSE_TYPES。scripts/quiz-data で生成
 │   └── types/quiz.ts           # フロント・サーバー共通型
+├── scripts/quiz-data/          # 小売物価統計調査からクイズマスターを生成するスクリプト（Python）
 ├── public/                     # favicon 等
 ├── wrangler.toml               # Pages 設定・D1 バインディング
 ├── vite.config.ts              # React + @hono/vite-dev-server（dev 時に /api を Hono へ）
@@ -90,7 +91,7 @@ API は `c.env.DB` がない場合でも落ちないように作ってある。�
 
 ### 4.2 クイズ開始時
 1. `GET /api/quiz?count=N` を呼ぶ。
-2. サーバーは `QUIZ_MASTER` をシャッフルして N 問を抽出する。返すのは表示に必要な項目（ID、カテゴリ、設問文、単位）と `totalResponses`（設問別回答者数）だけ。正解（`actualPrice`）、解説（`priceNote`）、正解のヒントになる値（`pastPrice`、世間平均）は返さない。
+2. サーバーは `QUIZ_MASTER` をシャッフルして N 問を抽出する。返すのは表示に必要な項目（ID、カテゴリ、設問文、単位）と `totalResponses`（設問別回答者数）だけ。正解（`actualPrice`）、解説（`priceNote`）、正解のヒントになる値（`priceHistory`、世間平均）は返さない。
 
 ### 4.3 回答完了・採点時
 1. クライアントが `POST /api/quiz/submit` に `{ answers: [{ questionId, answer }] }` を送る。

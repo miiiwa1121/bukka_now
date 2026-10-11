@@ -40,7 +40,7 @@ erDiagram
 | :--- | :--- | :--- | :--- |
 | `id` | INTEGER | PRIMARY KEY AUTOINCREMENT | 内部ID |
 | `submission_id` | TEXT | NOT NULL, FK → `quiz_submissions(id)` ON DELETE CASCADE | セッションID |
-| `question_id` | TEXT | NOT NULL | 設問ID（`q1`〜`q100`） |
+| `question_id` | TEXT | NOT NULL | 設問ID（`s` ＋ 銘柄符号。例: `s1001`。2026-10-11 以前の旧問題は `q1`〜`q100`） |
 | `user_answer` | REAL | NOT NULL | 回答金額（円） |
 | `error_rate` | REAL | NOT NULL | 相対誤差率 `|回答 - 正解| / 正解`（小数3桁） |
 | `score` | INTEGER | NOT NULL | 設問スコア（0〜100） |

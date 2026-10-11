@@ -22,7 +22,7 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
 
 ### 2.1 `GET /api/quiz`
 
-設問を取得する。カンニング防止のため、正解（`actualPrice`）、解説（`priceNote`）、正解のヒントになる値（`pastPrice`、`pastPriceYear`、世間平均）はレスポンスに含めない。
+設問を取得する。カンニング防止のため、正解（`actualPrice`）、解説（`priceNote`）、正解のヒントになる値（`priceHistory`、世間平均）はレスポンスに含めない。
 
 #### クエリパラメータ
 
@@ -36,11 +36,11 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
 {
   "questions": [
     {
-      "id": "q1",
+      "id": "s1001",
       "category": "food",
-      "categoryLabel": "食料品（生鮮）",
-      "title": "鶏卵1パック（10個・白玉・M/L）の全国平均価格",
-      "subtitle": "総務省小売物価統計調査に基づく全国平均小売価格",
+      "categoryLabel": "食料品（穀類）",
+      "title": "うるち米（コシヒカリ・5kg）の平均価格",
+      "subtitle": "東京都区部・2025年平均（総務省 小売物価統計調査）",
       "unit": "円",
       "totalResponses": 0
     }
@@ -67,8 +67,8 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
 ```json
 {
   "answers": [
-    { "questionId": "q1", "answer": 250 },
-    { "questionId": "q2", "answer": 190 }
+    { "questionId": "s1001", "answer": 4500 },
+    { "questionId": "s7401", "answer": 85 }
   ]
 }
 ```
@@ -103,27 +103,26 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
   "biasTendency": "volatile",
   "questionResults": [
     {
-      "questionId": "q1",
-      "title": "鶏卵1パック（10個・白玉・M/L）の全国平均価格",
+      "questionId": "s1001",
+      "title": "うるち米（コシヒカリ・5kg）の平均価格",
       "category": "food",
-      "categoryLabel": "食料品（生鮮）",
-      "userAnswer": 250,
-      "actualPrice": 258,
-      "averageExpected": 245,
-      "minAnswer": 180,
-      "maxAnswer": 400,
+      "categoryLabel": "食料品（穀類）",
+      "userAnswer": 4500,
+      "actualPrice": 4928,
+      "averageExpected": 4650,
+      "minAnswer": 2800,
+      "maxAnswer": 6000,
       "totalResponses": 37,
       "unit": "円",
-      "score": 92,
-      "errorRate": 0.031,
-      "priceNote": "鳥インフルエンザ流行前の2020年は約200円前後でしたが、…",
-      "pastPrice": 205,
-      "pastPriceYear": "2020年",
+      "score": 78,
+      "errorRate": 0.087,
+      "priceNote": "調査銘柄：国内産、精米、…「コシヒカリ」。1950年の495円から、2025年は4,928円（約10.0倍）。…",
+      "priceHistory": [{ "year": 1950, "price": 495 }, { "year": 1951, "price": 540 }, "…", { "year": 2025, "price": 4928 }],
       "distribution": [
         {
-          "label": "〜140円",
-          "min": 120,
-          "max": 139,
+          "label": "〜2,500円",
+          "min": 2000,
+          "max": 2499,
           "count": 0,
           "percent": 0,
           "hasUserAnswer": false,
@@ -131,7 +130,7 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
           "hasAverageExpected": false
         }
       ],
-      "rawAnswers": [250, 260, 240]
+      "rawAnswers": [4500, 4800, 5000]
     }
   ]
 }
@@ -148,6 +147,7 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
 | `questionResults[].averageExpected` | 今回の回答を含めた全回答の平均（四捨五入）。既存回答がなければ自分の回答と同じ値 |
 | `questionResults[].totalResponses` | 今回の回答を含めた累計回答数（`item_aggregates` ＋1） |
 | `questionResults[].minAnswer` / `maxAnswer` | 今回の回答を含めた全回答の最低値・最高値 |
+| `questionResults[].priceHistory` | 年平均価格の推移（古い順、最後が2025年）。面3の折れ線に使う |
 | `questionResults[].rawAnswers` | 分布の母集団（その設問の直近500件＋今回の回答）。面1のヒストグラムと面2の1単位プロットに使う |
 
 #### エラー
@@ -168,8 +168,8 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
   "totalParticipants": 37,
   "items": [
     {
-      "questionId": "q1",
-      "title": "鶏卵1パック（10個・白玉・M/L）の全国平均価格",
+      "questionId": "s1001",
+      "title": "うるち米（コシヒカリ・5kg）の平均価格",
       "averageExpected": 245,
       "totalResponses": 37
     }
