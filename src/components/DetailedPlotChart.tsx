@@ -241,26 +241,6 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
           </div>
         )}
       </div>
-
-      {/* 個別回答の価格一覧リスト（1単位の内訳テーブル） */}
-      <div className="detailed-breakdown-table-wrap">
-        <h4 className="table-caption">全回答価格の1単位内訳</h4>
-        <div className="breakdown-chips-flow">
-          {plotData
-            .filter((b) => b.count > 0 || b.isUser || b.isActual)
-            .map((b) => (
-              <div
-                key={b.price}
-                className={`breakdown-chip ${b.isUser ? 'chip-user' : ''} ${b.isActual ? 'chip-actual' : ''}`}
-              >
-                <span className="chip-price">{b.price.toLocaleString()}{item.unit}</span>
-                <span className="chip-count">{b.count}人</span>
-                {b.isUser && <span className="chip-tag user">あなた</span>}
-                {b.isActual && <span className="chip-tag actual">正解</span>}
-              </div>
-            ))}
-        </div>
-      </div>
     </div>
   );
 };

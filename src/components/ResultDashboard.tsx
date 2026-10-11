@@ -182,8 +182,6 @@ function getIntenseComment(score: number): IntenseComment {
 export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetry }) => {
   const [copied, setCopied] = useState(false);
   const [activeBoard, setActiveBoard] = useState<'summary' | 'detailed'>('summary');
-  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number>(0);
-  const [showAllInDetail, setShowAllInDetail] = useState<boolean>(false);
   const intenseComment = getIntenseComment(result.totalScore);
 
   const shareText = `【bukka_now 物価意識診断結果】\n物価意識スコア: 上位 ${result.topPercentile}% （総合スコア: ${result.totalScore}点）\n評価: ${intenseComment.punchline}\n判定: ${result.senseType.name}\n\nリアルタイム回答分布で診断しよう。\n#bukka_now #物価感覚診断`;
@@ -200,8 +198,7 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
     }
   };
 
-  const handleGoToDetail = (index: number) => {
-    setSelectedQuestionIndex(index);
+  const handleGoToDetail = () => {
     setActiveBoard('detailed');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -210,8 +207,6 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
     setActiveBoard('summary');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  const currentDetailedItem = result.questionResults[selectedQuestionIndex] ?? result.questionResults[0];
 
   // 詳細画面表示時に body にクラスを付与し、空間全体（背景ドット）を連動移動させる
   useEffect(() => {
@@ -231,7 +226,7 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
       <button
         type="button"
         className={`whiteboard-fixed-nav-btn ${activeBoard === 'detailed' ? 'is-detailed' : 'is-summary'}`}
-        onClick={activeBoard === 'summary' ? () => handleGoToDetail(0) : handleBackToSummary}
+        onClick={activeBoard === 'summary' ? handleGoToDetail : handleBackToSummary}
         aria-label={activeBoard === 'summary' ? 'データ詳細へ進む' : '診断サマリーに戻る'}
         title={activeBoard === 'summary' ? 'データ詳細へ進む' : '診断サマリーに戻る'}
         id="btn-slide-nav-toggle"
@@ -402,68 +397,11 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
             </div>
           </div>
 
-          {/* 【面2：データ詳細ボード（1単位でプロットされた棒グラフ）】 */}
+          {/* 【面2：データ詳細ボード（1単位でプロットされた棒グラフ全問一覧）】 */}
           <div className="whiteboard-panel panel-detailed">
             <div className="whiteboard-card-wrapper">
               <div className="glass-card animate-fade-in detailed-board-card">
-                {/* 詳細画面トップバー */}
-                <div className="detailed-board-top-bar">
-                  <button
-                    type="button"
-                    className="btn-back-to-summary"
-                    onClick={handleBackToSummary}
-                    id="btn-back-to-summary"
-                  >
-                    <span>← 診断サマリーに戻る</span>
-                  </button>
-
-                  <div className="detailed-board-view-switch">
-                  <button
-                    type="button"
-                    className={`switch-btn ${!showAllInDetail ? 'active' : ''}`}
-                    onClick={() => setShowAllInDetail(false)}
-                  >
-                    1問ずつ集中
-                  </button>
-                  <button
-                    type="button"
-                    className={`switch-btn ${showAllInDetail ? 'active' : ''}`}
-                    onClick={() => setShowAllInDetail(true)}
-                  >
-                    全問一覧
-                  </button>
-                </div>
-              </div>
-
-              <div className="detailed-board-headline">
-                <h2 className="detailed-main-title">1単位プロット棒グラフ</h2>
-                <p className="detailed-main-desc">
-                  全回答者が実際に入力したリアルな金額を「1単位」でピンポイントにプロットした詳細棒グラフです。
-                </p>
-              </div>
-
-              {/* 設問切替タブ（Q1〜Q10のピルチップ） */}
-              {!showAllInDetail && (
-                <div className="detailed-question-chips-carousel">
-                  {result.questionResults.map((q, idx) => {
-                    const isSelected = idx === selectedQuestionIndex;
-                    return (
-                      <button
-                        key={q.questionId}
-                        type="button"
-                        className={`q-select-chip ${isSelected ? 'active' : ''}`}
-                        onClick={() => setSelectedQuestionIndex(idx)}
-                      >
-                        <span className="chip-q-num">Q{idx + 1}</span>
-                        <span className="chip-q-name">{q.title.split('（')[0]}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* グラフ描画エリア */}
-              {showAllInDetail ? (
+                {/* 全問一覧の1単位プロット棒グラフ */}
                 <div className="detailed-all-questions-list">
                   {result.questionResults.map((qItem, idx) => (
                     <DetailedPlotChart
@@ -473,34 +411,12 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                     />
                   ))}
                 </div>
-              ) : (
-                <div className="detailed-single-question-view">
-                  {currentDetailedItem && (
-                    <DetailedPlotChart
-                      item={currentDetailedItem}
-                      questionIndex={selectedQuestionIndex}
-                    />
-                  )}
-                </div>
-              )}
-
-              {/* 詳細画面の下部戻るアクション */}
-              <div className="detailed-bottom-actions">
-                <button
-                  type="button"
-                  className="btn-back-to-summary"
-                  onClick={handleBackToSummary}
-                  style={{ width: '100%', maxWidth: '320px', height: '48px' }}
-                >
-                  <span>← 診断サマリーに戻る</span>
-                </button>
               </div>
             </div>
           </div>
 
         </div>
       </div>
-    </div>
     </div>
   );
 };
