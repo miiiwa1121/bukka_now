@@ -205,6 +205,76 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
   const handleBackToSummary = () => setActiveBoard('summary');
   const handleBackToDetail = () => setActiveBoard('detailed');
 
+  // スワイプ / ドラッグによる画面切り替えハンドラー（タッチ＆マウス対応）
+  const touchStartXRef = React.useRef<number | null>(null);
+  const touchStartYRef = React.useRef<number | null>(null);
+  const isDraggingRef = React.useRef<boolean>(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+    isDraggingRef.current = true;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isDraggingRef.current || touchStartXRef.current === null || touchStartYRef.current === null) {
+      isDraggingRef.current = false;
+      return;
+    }
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const diffX = endX - touchStartXRef.current;
+    const diffY = endY - touchStartYRef.current;
+
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+    isDraggingRef.current = false;
+
+    // 縦スクロールと競合しないよう、水平移動量が垂直移動量より大きく40px以上の場合に切り替え
+    if (Math.abs(diffX) > Math.abs(diffY) * 1.1 && Math.abs(diffX) > 40) {
+      if (diffX < 0) {
+        // 左スワイプ（次へ進む）
+        if (activeBoard === 'summary') setActiveBoard('detailed');
+        else if (activeBoard === 'detailed') setActiveBoard('trend');
+      } else {
+        // 右スワイプ（前へ戻る）
+        if (activeBoard === 'trend') setActiveBoard('detailed');
+        else if (activeBoard === 'detailed') setActiveBoard('summary');
+      }
+    }
+  };
+
+  // マウスドラッグ対応
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    touchStartXRef.current = e.clientX;
+    touchStartYRef.current = e.clientY;
+    isDraggingRef.current = true;
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!isDraggingRef.current || touchStartXRef.current === null || touchStartYRef.current === null) {
+      isDraggingRef.current = false;
+      return;
+    }
+    const diffX = e.clientX - touchStartXRef.current;
+    const diffY = e.clientY - touchStartYRef.current;
+
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+    isDraggingRef.current = false;
+
+    if (Math.abs(diffX) > Math.abs(diffY) * 1.1 && Math.abs(diffX) > 50) {
+      if (diffX < 0) {
+        if (activeBoard === 'summary') setActiveBoard('detailed');
+        else if (activeBoard === 'detailed') setActiveBoard('trend');
+      } else {
+        if (activeBoard === 'trend') setActiveBoard('detailed');
+        else if (activeBoard === 'detailed') setActiveBoard('summary');
+      }
+    }
+  };
+
   // 表示面に応じて body クラスを付与し、空間演出を連動
   useEffect(() => {
     document.body.classList.remove('detailed-view-active', 'trend-view-active');
@@ -344,8 +414,14 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
         </div>
       </div>
 
-      {/* ホワイトボードスライドラック（横スライドコンテナ） */}
-      <div className="whiteboard-track-viewport">
+      {/* ホワイトボードスライドラック（横スライドコンテナ・スワイプ/ドラッグ対応） */}
+      <div
+        className="whiteboard-track-viewport"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+      >
         <div className={`whiteboard-sliding-rail is-${activeBoard}-active`}>
           
           {/* 【面1：診断サマリーボード】 */}
@@ -359,54 +435,70 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
 
                   {result.questionResults.map((item, index) => {
                     return (
-                      <div key={item.questionId} className="result-question-card" id={`result-card-${item.questionId}`}>
-                        <div className="card-header-clean">
-                          <div className="card-title-group">
-                            <span className="card-q-index">Q{index + 1}</span>
-                            <h3 className="card-q-title">{item.title}</h3>
+                      <div key={item.questionId} className="unpis-question-card" id={`result-card-${item.questionId}`}>
+                        {/* 統一ヘッダー */}
+                        <div className="unified-card-header">
+                          <div className="unified-header-left">
+                            <span className="unified-q-badge">Q{index + 1}</span>
+                            <span className="unified-cat-badge">{item.categoryLabel}</span>
+                            <h3 className="unified-q-title">{item.title}</h3>
                           </div>
-                          <span className="card-respondents-pill">
-                            回答者数: <strong>{item.totalResponses.toLocaleString()}</strong>人
-                          </span>
-                        </div>
-
-                        <div className="stats-five-grid">
-                          <div className="stat-cell you">
-                            <span className="stat-cell-label">あなたの回答</span>
-                            <span className="stat-cell-value">{item.userAnswer.toLocaleString()}{item.unit}</span>
-                          </div>
-
-                          <div className="stat-cell actual">
-                            <span className="stat-cell-label">正解（公的相場）</span>
-                            <span className="stat-cell-value">{item.actualPrice.toLocaleString()}{item.unit}</span>
-                          </div>
-
-                          <div className="stat-cell avg">
-                            <span className="stat-cell-label">全体平均</span>
-                            <span className="stat-cell-value">{item.averageExpected.toLocaleString()}{item.unit}</span>
-                          </div>
-
-                          <div className="stat-cell min">
-                            <span className="stat-cell-label">最低値（MIN）</span>
-                            <span className="stat-cell-value">{item.minAnswer.toLocaleString()}{item.unit}</span>
-                          </div>
-
-                          <div className="stat-cell max">
-                            <span className="stat-cell-label">最高値（MAX）</span>
-                            <span className="stat-cell-value">{item.maxAnswer.toLocaleString()}{item.unit}</span>
+                          <div className="unified-header-right">
+                            <span className="unified-meta-pill">
+                              回答者数: <strong>{item.totalResponses.toLocaleString()}</strong>人
+                            </span>
                           </div>
                         </div>
 
-                        <DistributionBarChart
-                          distribution={item.distribution}
-                          userAnswer={item.userAnswer}
-                          actualPrice={item.actualPrice}
-                          minAnswer={item.minAnswer}
-                          maxAnswer={item.maxAnswer}
-                          unit={item.unit}
-                        />
+                        {/* 統一メトリクスグリッド（5カラム） */}
+                        <div className="unified-metrics-grid grid-five">
+                          <div className="unified-stat-cell you">
+                            <span className="unified-stat-label">あなたの回答</span>
+                            <span className="unified-stat-val">{item.userAnswer.toLocaleString()}{item.unit}</span>
+                            <span className="unified-stat-sub">自己予想値</span>
+                          </div>
 
-                        <p className="card-clean-note">{item.priceNote}</p>
+                          <div className="unified-stat-cell actual">
+                            <span className="unified-stat-label">正解（公的相場）</span>
+                            <span className="unified-stat-val">{item.actualPrice.toLocaleString()}{item.unit}</span>
+                            <span className="unified-stat-sub">公定価格</span>
+                          </div>
+
+                          <div className="unified-stat-cell avg">
+                            <span className="unified-stat-label">全体平均</span>
+                            <span className="unified-stat-val">{item.averageExpected.toLocaleString()}{item.unit}</span>
+                            <span className="unified-stat-sub">回答平均値</span>
+                          </div>
+
+                          <div className="unified-stat-cell min">
+                            <span className="unified-stat-label">最低値（MIN）</span>
+                            <span className="unified-stat-val">{item.minAnswer.toLocaleString()}{item.unit}</span>
+                            <span className="unified-stat-sub">最小回答</span>
+                          </div>
+
+                          <div className="unified-stat-cell max">
+                            <span className="unified-stat-label">最高値（MAX）</span>
+                            <span className="unified-stat-val">{item.maxAnswer.toLocaleString()}{item.unit}</span>
+                            <span className="unified-stat-sub">最大回答</span>
+                          </div>
+                        </div>
+
+                        <div className="unified-chart-container">
+                          <DistributionBarChart
+                            distribution={item.distribution}
+                            userAnswer={item.userAnswer}
+                            actualPrice={item.actualPrice}
+                            minAnswer={item.minAnswer}
+                            maxAnswer={item.maxAnswer}
+                            unit={item.unit}
+                          />
+                        </div>
+
+                        {item.priceNote && (
+                          <p className="unified-note-text">
+                            <span className="note-strong">品目概要:</span> {item.priceNote}
+                          </p>
+                        )}
                       </div>
                     );
                   })}

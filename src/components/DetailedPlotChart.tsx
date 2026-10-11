@@ -95,23 +95,27 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
   };
 
   return (
-    <div className="detailed-plot-card" id={`detailed-plot-${item.questionId}`}>
-      {/* 設問ヘッダー */}
-      <div className="detailed-plot-header">
-        <div className="detailed-q-badge">
-          <span className="q-tag">Q{questionIndex + 1}</span>
-          <span className="q-category">{item.categoryLabel}</span>
+    <div className="unpis-question-card" id={`detailed-plot-${item.questionId}`}>
+      {/* 統一ヘッダー */}
+      <div className="unified-card-header">
+        <div className="unified-header-left">
+          <span className="unified-q-badge">Q{questionIndex + 1}</span>
+          <span className="unified-cat-badge">{item.categoryLabel}</span>
+          <h3 className="unified-q-title">{item.title}</h3>
         </div>
-        <h3 className="detailed-plot-title">{item.title}</h3>
-        <p className="detailed-plot-note">{item.priceNote}</p>
+        <div className="unified-header-right">
+          <span className="unified-meta-pill">
+            回答者数: <strong>{stats.total.toLocaleString()}</strong>人
+          </span>
+        </div>
       </div>
 
-      {/* サマリーメトリクス（ホワイトボード風メモ） */}
-      <div className="plot-stats-ribbon">
-        <div className="plot-stat-chip you">
-          <span className="stat-chip-label">あなたの回答</span>
-          <span className="stat-chip-val">{item.userAnswer.toLocaleString()}{item.unit}</span>
-          <span className="stat-chip-sub">
+      {/* 統一メトリクスグリッド（4カラム） */}
+      <div className="unified-metrics-grid">
+        <div className="unified-stat-cell you">
+          <span className="unified-stat-label">あなたの回答</span>
+          <span className="unified-stat-val">{item.userAnswer.toLocaleString()}{item.unit}</span>
+          <span className="unified-stat-sub">
             {stats.diffActual === 0
               ? 'ピタリ正解'
               : stats.diffActual > 0
@@ -120,22 +124,22 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
           </span>
         </div>
 
-        <div className="plot-stat-chip actual">
-          <span className="stat-chip-label">正解（公的相場）</span>
-          <span className="stat-chip-val">{item.actualPrice.toLocaleString()}{item.unit}</span>
-          <span className="stat-chip-sub">基準価格</span>
+        <div className="unified-stat-cell actual">
+          <span className="unified-stat-label">正解（公的相場）</span>
+          <span className="unified-stat-val">{item.actualPrice.toLocaleString()}{item.unit}</span>
+          <span className="unified-stat-sub">基準価格</span>
         </div>
 
-        <div className="plot-stat-chip avg">
-          <span className="stat-chip-label">世間平均予想</span>
-          <span className="stat-chip-val">{item.averageExpected.toLocaleString()}{item.unit}</span>
-          <span className="stat-chip-sub">全回答者平均</span>
+        <div className="unified-stat-cell avg">
+          <span className="unified-stat-label">世間平均予想</span>
+          <span className="unified-stat-val">{item.averageExpected.toLocaleString()}{item.unit}</span>
+          <span className="unified-stat-sub">全回答者平均</span>
         </div>
 
-        <div className="plot-stat-chip total">
-          <span className="stat-chip-label">総回答数</span>
-          <span className="stat-chip-val">{stats.total}人</span>
-          <span className="stat-chip-sub">中央値: {stats.median.toLocaleString()}{item.unit}</span>
+        <div className="unified-stat-cell past">
+          <span className="unified-stat-label">中央値 / 総回答</span>
+          <span className="unified-stat-val">{stats.median.toLocaleString()}{item.unit}</span>
+          <span className="unified-stat-sub">総回答数: {stats.total}人</span>
         </div>
       </div>
 
@@ -241,6 +245,13 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
           </div>
         )}
       </div>
+
+      {/* 統一注記・解説 */}
+      {item.priceNote && (
+        <p className="unified-note-text">
+          <span className="note-strong">品目概要:</span> {item.priceNote}
+        </p>
+      )}
     </div>
   );
 };
