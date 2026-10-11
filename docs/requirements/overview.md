@@ -25,8 +25,8 @@
   - フォント: `Outfit` ＋ `Noto Sans JP`。
 - **シンプル is best**: 冗長な説明文・装飾的なフィーチャーカードは置かない。
 - **フッター**（全画面共通）: 白カード・2px 黒枠で、以下を表示する。
-  - 開発者: X `@miiiwa3330`（https://x.com/miiiwa3330 ）、GitHub `@miiiwa1121`（https://github.com/miiiwa1121/ ）へのリンク。氏名は出さない
-  - ソースコード: GitHub リポジトリ `miiiwa1121/bukka_now` へのリンク
+  - 開発者: X `@miiiwa3330`（https://x.com/miiiwa3330 ）、GitHub `@miiiwa3330`（https://github.com/miiiwa3330/ ）へのリンク。氏名は出さない
+  - ソースコード: GitHub リポジトリ `miiiwa3330/bukka_now` へのリンク
   - 価格の出典: 総務省統計局「小売物価統計調査」（公式ページへのリンク）、東京都区部の年平均価格
   - 注記: 正解価格は東京都区部の2025年平均（一部は全国統一価格）で地域や店舗によって異なること、回答は個人を特定しない形で集計されること
   - コピーライト: © 2026 bukka_now

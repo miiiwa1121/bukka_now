@@ -313,16 +313,16 @@ export const App: React.FC = () => {
               <a href="https://x.com/miiiwa3330" target="_blank" rel="noopener noreferrer">
                 X: @miiiwa3330
               </a>
-              <a href="https://github.com/miiiwa1121/" target="_blank" rel="noopener noreferrer">
-                GitHub: @miiiwa1121
+              <a href="https://github.com/miiiwa3330/" target="_blank" rel="noopener noreferrer">
+                GitHub: @miiiwa3330
               </a>
             </dd>
           </div>
           <div className="footer-info-row">
             <dt>ソースコード</dt>
             <dd>
-              <a href="https://github.com/miiiwa1121/bukka_now" target="_blank" rel="noopener noreferrer">
-                GitHub: miiiwa1121/bukka_now
+              <a href="https://github.com/miiiwa3330/bukka_now" target="_blank" rel="noopener noreferrer">
+                GitHub: miiiwa3330/bukka_now
               </a>
             </dd>
           </div>
