@@ -275,6 +275,45 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
     }
   };
 
+  // トラックパッド二本指横スワイプ対応
+  const lastWheelTimeRef = React.useRef<number>(0);
+
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      // 水平方向の二本指スワイプ判定（垂直成分より大きく一定量以上のdeltaX）
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) * 1.2 && Math.abs(e.deltaX) > 20) {
+        const now = Date.now();
+        // 連続発火防止（クールダウン 650ms）
+        if (now - lastWheelTimeRef.current < 650) {
+          return;
+        }
+
+        if (e.deltaX > 20) {
+          // 指を左へスワイプ ＝ 次のボードへ進む
+          lastWheelTimeRef.current = now;
+          setActiveBoard((prev) => {
+            if (prev === 'summary') return 'detailed';
+            if (prev === 'detailed') return 'trend';
+            return prev;
+          });
+        } else if (e.deltaX < -20) {
+          // 指を右へスワイプ ＝ 前のボードへ戻る
+          lastWheelTimeRef.current = now;
+          setActiveBoard((prev) => {
+            if (prev === 'trend') return 'detailed';
+            if (prev === 'detailed') return 'summary';
+            return prev;
+          });
+        }
+      }
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: true });
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
   // 表示面に応じて body クラスを付与し、空間演出を連動
   useEffect(() => {
     document.body.classList.remove('detailed-view-active', 'trend-view-active');
@@ -538,6 +577,19 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                       />
                     ))}
                   </div>
+
+                  {/* 最下部アクション */}
+                  <div className="result-bottom-actions">
+                    <button
+                      type="button"
+                      className="btn-action-top btn-retry-top"
+                      id="btn-retry-bottom-detail"
+                      onClick={onRetry}
+                      style={{ width: '100%', maxWidth: '360px', height: '48px', fontSize: '1rem' }}
+                    >
+                      <span>もう一度挑戦する</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -560,6 +612,19 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                         questionIndex={idx}
                       />
                     ))}
+                  </div>
+
+                  {/* 最下部アクション */}
+                  <div className="result-bottom-actions">
+                    <button
+                      type="button"
+                      className="btn-action-top btn-retry-top"
+                      id="btn-retry-bottom-trend"
+                      onClick={onRetry}
+                      style={{ width: '100%', maxWidth: '360px', height: '48px', fontSize: '1rem' }}
+                    >
+                      <span>もう一度挑戦する</span>
+                    </button>
                   </div>
                 </div>
               </div>

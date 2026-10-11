@@ -63,12 +63,12 @@ export const PriceTrendChart: React.FC<PriceTrendChartProps> = ({ item, question
   const chartW = svgWidth - padLeft - padRight; // 520
   const chartH = svgHeight - padTop - padBottom; // 167
 
-  // Y軸のスケール計算（最小値・最大値を包含）
-  const allValues = [...trendPrices, userPrice, avgPrice];
+  // Y軸のスケール計算（公的物価推移の最小値・最大値に基づく最適スケール）
+  const allValues = trendPrices;
   const rawMin = Math.min(...allValues);
   const rawMax = Math.max(...allValues);
   const span = rawMax - rawMin || 1;
-  const marginY = Math.max(span * 0.18, 10);
+  const marginY = Math.max(span * 0.22, 10);
 
   const plotMin = Math.max(0, Math.floor((rawMin - marginY) / 10) * 10);
   const plotMax = Math.ceil((rawMax + marginY) / 10) * 10;
@@ -101,8 +101,6 @@ export const PriceTrendChart: React.FC<PriceTrendChartProps> = ({ item, question
 
   // 2026年時点の特別プロット（X座標 = linePoints[3].x）
   const currentX = getX(3);
-  const userY = getY(userPrice);
-  const avgY = getY(avgPrice);
   const currentY = getY(currentPrice);
 
   // Y軸の目盛り値（4分割）
@@ -258,110 +256,37 @@ export const PriceTrendChart: React.FC<PriceTrendChartProps> = ({ item, question
             </g>
           ))}
 
-          {/* 2026年公的相場ポイント（正解） */}
+          {/* 2026年公的相場ポイント（正解到達点） */}
           <g className="trend-point-group current-actual-group">
             <circle
               cx={currentX}
               cy={currentY}
-              r="6"
+              r="6.5"
               fill="#121212"
               stroke="#ffffff"
               strokeWidth="2.5"
             />
             {/* 正解ラベル吹き出し */}
             <rect
-              x={currentX + 10}
-              y={currentY - 12}
-              width="68"
-              height="22"
+              x={currentX - 44}
+              y={currentY - 32}
+              width="88"
+              height="24"
               rx="4"
               fill="#121212"
             />
             <text
-              x={currentX + 44}
-              y={currentY + 3}
+              x={currentX}
+              y={currentY - 16}
               textAnchor="middle"
               fill="#ffffff"
-              fontSize="11"
-              fontWeight="800"
-            >
-              正解 {currentPrice.toLocaleString()}{item.unit}
-            </text>
-          </g>
-
-          {/* あなたの回答プロット（2026年） */}
-          <g className="trend-point-group user-plot-group">
-            {/* 現在相場との乖離点線 */}
-            {userPrice !== currentPrice && (
-              <line
-                x1={currentX}
-                y1={currentY}
-                x2={currentX}
-                y2={userY}
-                stroke="#e03c31"
-                strokeWidth="1.8"
-                strokeDasharray="3,3"
-              />
-            )}
-            <circle
-              cx={currentX}
-              cy={userY}
-              r="7.5"
-              fill="#e03c31"
-              stroke="#ffffff"
-              strokeWidth="2.5"
-            />
-            {/* あなたラベル吹き出し */}
-            <rect
-              x={currentX - 84}
-              y={userY - 12}
-              width="76"
-              height="22"
-              rx="4"
-              fill="#e03c31"
-            />
-            <text
-              x={currentX - 46}
-              y={userY + 3}
-              textAnchor="middle"
-              fill="#ffffff"
-              fontSize="11"
+              fontSize="12"
               fontWeight="900"
             >
-              あなた {userPrice.toLocaleString()}{item.unit}
+              現在 {currentPrice.toLocaleString()}{item.unit}
             </text>
           </g>
-
-          {/* 世間平均プロット（2026年） */}
-          {avgPrice !== currentPrice && avgPrice !== userPrice && (
-            <g className="trend-point-group avg-plot-group">
-              <circle
-                cx={currentX}
-                cy={avgY}
-                r="5"
-                fill="#2b5c8f"
-                stroke="#ffffff"
-                strokeWidth="2"
-              />
-            </g>
-          )}
         </svg>
-      </div>
-
-      {/* 統一凡例（レジェンド） */}
-      <div className="unified-chart-legend">
-        <span className="legend-chip">
-          <span className="legend-line actual-line" /> 公的物価推移（正解）
-        </span>
-        <span className="legend-chip">
-          <span className="legend-dot user-dot" /> あなたの回答
-        </span>
-        <span className="legend-chip">
-          <span className="legend-dot avg-dot" /> 世間平均
-        </span>
-        <span className="legend-chip">
-          <span className="legend-dot past-dot" /> {pastYear}基準相場
-        </span>
       </div>
 
       {/* 統一注記・要因解説 */}

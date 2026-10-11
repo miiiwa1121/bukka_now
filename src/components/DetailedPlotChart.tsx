@@ -188,19 +188,6 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
                   onMouseLeave={() => setActiveTooltip(null)}
                   onClick={() => setActiveTooltip(bar)}
                 >
-                  {/* 頭上のマーカーラベル（あなた・正解・平均） */}
-                  <div className="plot-flag-marker">
-                    {bar.isUser && bar.isActual ? (
-                      <span className="flag-bubble match">正解一致</span>
-                    ) : bar.isUser ? (
-                      <span className="flag-bubble user">あなた</span>
-                    ) : bar.isActual ? (
-                      <span className="flag-bubble actual">正解</span>
-                    ) : bar.isAvg ? (
-                      <span className="flag-bubble avg">平均</span>
-                    ) : null}
-                  </div>
-
                   {/* 1単位のプロット棒 */}
                   <div className="plot-bar-stem-wrap">
                     <div
