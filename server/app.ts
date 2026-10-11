@@ -278,8 +278,8 @@ app.post('/api/quiz/submit', async (c) => {
     if (db) {
       const statements: D1PreparedStatement[] = [
         db
-          .prepare('INSERT INTO quiz_submissions (id, total_score, sense_type, bias_score) VALUES (?, ?, ?, ?)')
-          .bind(result.submissionId, result.totalScore, result.senseType.code, result.biasScore),
+          .prepare('INSERT INTO quiz_submissions (id, total_score, sense_type, bias_score, question_count) VALUES (?, ?, ?, ?, ?)')
+          .bind(result.submissionId, result.totalScore, result.senseType.code, result.biasScore, answers.length),
         db
           .prepare(
             `INSERT INTO score_counts (total_score, submissions) VALUES (?, 1)

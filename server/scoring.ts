@@ -9,6 +9,26 @@ import type {
 } from '../src/types/quiz';
 import { isInRange } from './aggregation';
 
+// 設問スコアが0点になる比率。回答が正解の3倍、または3分の1で0点
+export const SCORE_ZERO_RATIO = 3;
+
+/**
+ * 設問スコア（0〜100点）。回答と正解の比率の対数で測る（高すぎと安すぎを同じ厳しさで扱う）
+ * 正解ちょうどで100点、正解の3倍・3分の1で0点。例: 正解1,000円に 800円 → 80点、1,500円 → 63点、500円 → 37点
+ */
+/**
+ * 1問ぶんのバイアス（高めに答えたら正、安めなら負）。回答と正解の比率の対数で測る
+ * 設問スコアと同じく、2倍（+0.69）と半分（−0.69）を同じ大きさで扱う。相対誤差の平均だと、高すぎる回答（特に ×10 の打ち間違い）ほど大きく効いた
+ */
+export function answerBias(answer: number, actualPrice: number): number {
+  return Math.log(answer / actualPrice);
+}
+
+export function scoreQuestion(answer: number, actualPrice: number): number {
+  const distance = Math.abs(Math.log(answer / actualPrice));
+  return Math.max(0, Math.min(100, Math.round(100 * (1 - distance / Math.log(SCORE_ZERO_RATIO)))));
+}
+
 /**
  * 総合スコアから「上位何%」を算出する。これまでの全診断の総合スコア分布（スコア → 人数）と比べる
  * 自分を含めた順位の中央（同点は真ん中扱い）を割合にする。比較対象がいなければ 50%
@@ -115,6 +135,19 @@ export interface ScoringContext {
   scoreCounts?: Record<number, number>;         // これまでの診断の総合スコア → 人数
 }
 
+/**
+ * 物価感覚タイプの判定（絵文字不使用）。上から順に判定する
+ */
+export function determineSenseType(
+  totalScore: number,
+  biasScore: number
+): { typeKey: 'master' | 'timeslip' | 'panic' | 'rough'; biasTendency: QuizSubmissionResult['biasTendency'] } {
+  if (totalScore >= 80) return { typeKey: 'master', biasTendency: 'balanced' };
+  if (biasScore <= -0.08) return { typeKey: 'timeslip', biasTendency: 'underestimated' };
+  if (biasScore >= 0.08) return { typeKey: 'panic', biasTendency: 'overestimated' };
+  return { typeKey: 'rough', biasTendency: 'volatile' };
+}
+
 export function calculateQuizResult(
   userAnswers: UserAnswerItem[],
   { questionStats = {}, historicalAnswers = {}, scoreCounts = {} }: ScoringContext = {}
@@ -138,10 +171,9 @@ export function calculateQuizResult(
     let questionScore = 0;
     if (userAnswer !== null) {
       errorRate = Math.abs(userAnswer - actual) / actual;
-      biasSum += (userAnswer - actual) / actual;
+      biasSum += answerBias(userAnswer, actual);
       answeredCount++;
-      // 設問スコア: 誤差率0%で100点、40%以上で0点
-      questionScore = Math.max(0, Math.min(100, Math.round(100 * (1 - errorRate / 0.4))));
+      questionScore = scoreQuestion(userAnswer, actual);
     }
     totalScoreSum += questionScore;
 
@@ -191,24 +223,7 @@ export function calculateQuizResult(
   const biasScore = Number((answeredCount > 0 ? biasSum / answeredCount : 0).toFixed(3));
   const topPercentile = calculateTopPercentile(totalScore, scoreCounts);
 
-  // タイプ判定（絵文字不使用）
-  let typeKey = 'rough';
-  let biasTendency: 'balanced' | 'underestimated' | 'overestimated' | 'volatile' = 'balanced';
-
-  if (totalScore >= 80) {
-    typeKey = 'master';
-    biasTendency = 'balanced';
-  } else if (biasScore <= -0.08) {
-    typeKey = 'timeslip';
-    biasTendency = 'underestimated';
-  } else if (biasScore >= 0.08) {
-    typeKey = 'panic';
-    biasTendency = 'overestimated';
-  } else {
-    typeKey = 'rough';
-    biasTendency = 'volatile';
-  }
-
+  const { typeKey, biasTendency } = determineSenseType(totalScore, biasScore);
   const senseType = SENSE_TYPES[typeKey] ?? SENSE_TYPES.master;
   const submissionId = `sub_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 

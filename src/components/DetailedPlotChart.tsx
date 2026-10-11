@@ -1,8 +1,9 @@
 // src/components/DetailedPlotChart.tsx: 1円単位でプロットした回答分布の縦棒グラフ（面2）
 // 面1（DistributionBarChart）と同じパネル・凡例・配色・目盛りグリッド線で描画する
-// 棒を押す（マウスはホバー）・←→キーで、その金額と人数を吹き出しで表示する（面3の折れ線と同じ吹き出し）
+// 金額の種類がいくつあっても全ての棒を枠内に収める（横スクロール・金額ラベルなし）
+// 棒を押す・なぞる（マウスはホバー）・←→キーで、その金額と人数を吹き出しで表示する（面3の折れ線と同じ吹き出し）
 
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { QuestionResultItem } from '../types/quiz';
 import { formatAmount } from '../utils/format';
 import { getBarColorClass } from './DistributionBarChart';
@@ -80,27 +81,26 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
   );
   const [selectedIndex, setSelectedIndex] = useState(initialIndex);
   const lastIndex = plotData.length - 1;
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const axisRef = useRef<HTMLDivElement>(null);
+  const plotRef = useRef<HTMLDivElement>(null);
+  const columnsRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLSpanElement>(null);
-  const columnRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   /**
-   * 吹き出しが見えている範囲（Y軸ラベルの右〜スクロール枠の右）からはみ出す分だけ、横にずらす
-   * 狭い画面や横スクロール中でも切れないようにする。幅は描画後に実測する（状態は持たず、style.translate を直接書き換える）
+   * 吹き出しがグラフの枠（Y軸ラベルの右〜枠の右）からはみ出す分だけ、横にずらす
+   * 枠より吹き出しが広い（スマホ幅で付記がある場合など）ときは、付記の手前で折り返す
+   * 幅は描画後に実測する（状態は持たず、style を直接書き換える）
    */
   const positionTooltip = useCallback(() => {
     const tooltip = tooltipRef.current;
-    const scroller = scrollRef.current;
-    if (!tooltip || !scroller) return;
+    const plot = plotRef.current;
+    if (!tooltip || !plot) return;
     tooltip.style.translate = '0px 0px';
     tooltip.style.whiteSpace = '';
     tooltip.style.maxWidth = '';
     tooltip.style.lineHeight = '';
-    const scrollerRect = scroller.getBoundingClientRect();
-    const left = (axisRef.current?.getBoundingClientRect().right ?? scrollerRect.left) + TOOLTIP_EDGE_GAP;
-    const right = scrollerRect.right - TOOLTIP_EDGE_GAP;
-    // 見えている範囲より吹き出しが広い（スマホ幅で付記がある場合など）ときは、折り返して収める
+    const plotRect = plot.getBoundingClientRect();
+    const left = plotRect.left + TOOLTIP_EDGE_GAP;
+    const right = plotRect.right - TOOLTIP_EDGE_GAP;
     if (tooltip.getBoundingClientRect().width > right - left) {
       tooltip.style.whiteSpace = 'normal';
       tooltip.style.maxWidth = `${Math.floor(right - left)}px`;
@@ -113,36 +113,20 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
     tooltip.style.translate = `${Math.round(dx)}px 0px`;
   }, []);
 
-  /**
-   * 棒を選ぶ。reveal（キーボード操作）のときは、見えていない棒を見える位置までスクロールする
-   */
-  const selectBar = (index: number, reveal = false) => {
-    const scroller = scrollRef.current;
-    const column = columnRefs.current[index];
-    if (reveal && scroller && column) {
-      const scrollerRect = scroller.getBoundingClientRect();
-      const columnRect = column.getBoundingClientRect();
-      const left = axisRef.current?.getBoundingClientRect().right ?? scrollerRect.left;
-      if (columnRect.left < left) scroller.scrollLeft -= left - columnRect.left;
-      else if (columnRect.right > scrollerRect.right) scroller.scrollLeft += columnRect.right - scrollerRect.right;
-    }
-    setSelectedIndex(index);
-  };
-
   // 選択が変わるたびに（描画後・表示前に）吹き出しの位置を合わせる
   useLayoutEffect(() => {
     positionTooltip();
   }, [positionTooltip, selectedIndex, plotData]);
 
-  // 横スクロールする場合、初期表示の棒が見える位置までずらす（ページの縦スクロールは動かさない）
-  useEffect(() => {
-    const scroller = scrollRef.current;
-    const column = columnRefs.current[initialIndex];
-    if (!scroller || !column || scroller.scrollWidth <= scroller.clientWidth) return;
-    const scrollerRect = scroller.getBoundingClientRect();
-    const columnRect = column.getBoundingClientRect();
-    scroller.scrollLeft += columnRect.left + columnRect.width / 2 - (scrollerRect.left + scrollerRect.width / 2);
-  }, [initialIndex]);
+  /**
+   * 押した・なぞった位置の棒を選ぶ（列は等幅なので、横位置から番号を出す。細い棒でも狙わずに選べる）
+   */
+  const selectAtClientX = (clientX: number) => {
+    const rect = columnsRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return;
+    const index = Math.floor(((clientX - rect.left) / rect.width) * plotData.length);
+    setSelectedIndex(Math.min(lastIndex, Math.max(0, index)));
+  };
 
   // 吹き出しの文言。「1,400円 11人」と、あなたの回答・正解・平均値に当たる棒の付記「（あなた・正解）」
   const barLabelParts = (bar: PlotBarData) => {
@@ -160,10 +144,10 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      selectBar(Math.max(0, selectedIndex - 1), true);
+      setSelectedIndex((i) => Math.max(0, i - 1));
     } else if (e.key === 'ArrowRight') {
       e.preventDefault();
-      selectBar(Math.min(lastIndex, selectedIndex + 1), true);
+      setSelectedIndex((i) => Math.min(lastIndex, i + 1));
     }
   };
 
@@ -231,11 +215,11 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
             </div>
           </div>
 
-          {/* 縦棒グラフ（金額の種類が多い場合は横スクロール。Y軸の目盛りは左に固定） */}
-          <div className="vplot-scroll" ref={scrollRef} onScroll={positionTooltip}>
-            <div className="vplot-content" style={{ minWidth: `calc(var(--vplot-axis-w) + ${plotData.length} * var(--vplot-col-min-w))` }}>
+          {/* 縦棒グラフ（全ての金額を枠内に詰める。金額ラベルは出さず、吹き出しで示す） */}
+          <div className="vplot-scroll plot-fit">
+            <div className="vplot-content">
               {/* Y軸の目盛りラベル（人数） */}
-              <div className="vplot-y-axis" ref={axisRef} aria-hidden="true">
+              <div className="vplot-y-axis" aria-hidden="true">
                 <div className="vplot-inner">
                   {ticks.map((tick) => (
                     <span key={tick} className="vplot-y-label" style={{ bottom: `${(tick / scaleMax) * 100}%` }}>
@@ -246,14 +230,15 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
               </div>
 
               {/* プロット本体（背後に横グリッド線） */}
-              <div className="vplot-area">
+              <div className="vplot-area" ref={plotRef}>
                 <div className="vplot-inner">
                   {ticks.map((tick) => (
                     <span key={tick} className="vplot-grid-line" style={{ bottom: `${(tick / scaleMax) * 100}%` }} />
                   ))}
 
-                  {/* 棒を押す・ホバー・←→キーで選ぶ。グラフ上の操作はボード切り替えのスワイプ・ドラッグとして扱わせない */}
+                  {/* 押す・なぞる（マウスはホバー）・←→キーで選ぶ。グラフ上の操作はボード切り替えのスワイプ・ドラッグとして扱わせない */}
                   <div
+                    ref={columnsRef}
                     className="vplot-columns"
                     role="slider"
                     tabIndex={0}
@@ -262,6 +247,11 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
                     aria-valuemax={plotData[lastIndex].price}
                     aria-valuenow={selected.price}
                     aria-valuetext={barLabel(selected)}
+                    onPointerDown={(e) => selectAtClientX(e.clientX)}
+                    onPointerMove={(e) => {
+                      // マウスはホバーで、タッチ・ペンは押している間だけ追従
+                      if (e.pointerType === 'mouse' || e.buttons > 0) selectAtClientX(e.clientX);
+                    }}
                     onKeyDown={handleKeyDown}
                     onTouchStart={(e) => e.stopPropagation()}
                     onTouchEnd={(e) => e.stopPropagation()}
@@ -271,18 +261,7 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
                     {plotData.map((bar, index) => {
                       const heightPercent = (bar.count / scaleMax) * 100;
                       return (
-                        <div
-                          key={bar.price}
-                          ref={(el) => {
-                            columnRefs.current[index] = el;
-                          }}
-                          className={`vplot-column${index === selectedIndex ? ' is-selected' : ''}`}
-                          // タッチはタップで選ぶ（なぞって追従させると横スクロールと取り合うため）
-                          onPointerDown={() => selectBar(index)}
-                          onPointerEnter={(e) => {
-                            if (e.pointerType === 'mouse') selectBar(index);
-                          }}
-                        >
+                        <div key={bar.price} className={`vplot-column${index === selectedIndex ? ' is-selected' : ''}`}>
                           <div
                             className={`vplot-bar ${getBarColorClass(bar)}${bar.count === 0 ? ' is-zero' : ''}`}
                             style={{ height: bar.count > 0 ? `${heightPercent}%` : undefined }}
@@ -292,7 +271,10 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
                     })}
                   </div>
 
-                  {/* 選択中の棒の金額と人数（上部に余裕がない場合は下側。見えている範囲からはみ出す分は positionTooltip でずらす） */}
+                  {/* 選択中の棒の縦線（細い棒でも位置が分かるように。面3と同じ） */}
+                  <span className="chart-cursor-line" style={{ left: `${selectedX}%` }} aria-hidden="true" />
+
+                  {/* 選択中の棒の金額と人数（上部に余裕がない場合は下側。枠からはみ出す分は positionTooltip でずらす） */}
                   <span
                     ref={tooltipRef}
                     className={`chart-tooltip ${selectedY > 70 ? 'is-below' : ''}`}
@@ -304,15 +286,6 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
                     {barLabelParts(selected).tag && <span className="chart-tooltip-tag">{barLabelParts(selected).tag}</span>}
                   </span>
                 </div>
-              </div>
-
-              {/* X軸の金額ラベル */}
-              <div className="vplot-x-labels">
-                {plotData.map((bar) => (
-                  <span key={bar.price} className="vplot-x-label">
-                    {bar.price.toLocaleString()}{item.unit}
-                  </span>
-                ))}
               </div>
             </div>
           </div>

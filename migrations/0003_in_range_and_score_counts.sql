@@ -1,5 +1,11 @@
 -- 0003_in_range_and_score_counts.sql: 未回答の除去・集計対象の判定・最低値/最高値とスコア分布の集計表
 
+-- 0. 診断ごとの出題数（未回答を含む）。総合スコアを計算し直すときの分母に使う
+--    0003 より前は未回答も 0円の行として保存されていたので、回答ログの行数が出題数になる（1. で消す前に数える）
+ALTER TABLE quiz_submissions ADD COLUMN question_count INTEGER;
+UPDATE quiz_submissions
+SET question_count = (SELECT COUNT(*) FROM quiz_answers WHERE quiz_answers.submission_id = quiz_submissions.id);
+
 -- 1. 未回答の削除。0003 より前は、時間切れで入力がない設問が 0円として保存されていた
 --    （以後、未回答は回答ログに保存しない。API も 0円を受け付けない）
 DELETE FROM quiz_answers WHERE user_answer <= 0;

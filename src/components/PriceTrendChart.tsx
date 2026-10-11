@@ -224,7 +224,7 @@ export const PriceTrendChart: React.FC<PriceTrendChartProps> = ({ item, question
                   </svg>
 
                   {/* 選択中の年の縦線と点 */}
-                  <span className="trend-cursor-line" style={{ left: `${selectedX}%` }} aria-hidden="true" />
+                  <span className="chart-cursor-line" style={{ left: `${selectedX}%` }} aria-hidden="true" />
                   <span
                     className="trend-point is-selected"
                     style={{ left: `${selectedX}%`, bottom: `${selectedY}%` }}

@@ -1993,8 +1993,8 @@ body.detailed-view-active {
   outline-offset: 2px;
 }
 
-/* 選択中の年の縦線 */
-.trend-cursor-line {
+/* 選択中の年・棒の縦線（面2・面3 共通） */
+.chart-cursor-line {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -2302,6 +2302,42 @@ body.detailed-view-active {
 @media (max-width: 640px) {
   .vplot-x-label {
     font-size: 0.64rem;
+  }
+}
+
+/* 面2: 全ての金額を枠内に詰める（金額ラベル・横スクロールなし。列幅に下限を設けない） */
+.vplot-scroll.plot-fit {
+  --vplot-x-label-h: 0.5rem;
+  overflow-x: hidden;
+}
+
+.plot-fit .vplot-columns {
+  touch-action: pan-y; /* 横になぞる操作は棒の選択に使い、縦スクロールは妨げない */
+}
+
+.plot-fit .vplot-column {
+  container-type: inline-size;
+}
+
+.plot-fit .vplot-bar {
+  width: clamp(1px, 70%, 10px);
+}
+
+/* 列が狭い（金額の種類が多い）ときは、枠線をやめて濃い色で塗る（細い棒でも見えるように） */
+@container (max-width: 6px) {
+  .vplot-bar {
+    border: none;
+    border-radius: 0;
+  }
+
+  .vplot-bar.bar-default {
+    background: var(--ink-subtle);
+  }
+
+  /* あなたの回答・正解・平均値の棒は、列より太く（3px）して隣の棒より手前に描く */
+  .vplot-bar:not(.bar-default) {
+    width: 3px;
+    z-index: 1;
   }
 }
 

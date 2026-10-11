@@ -23,9 +23,11 @@
 | `npm run deploy` | build のあと `wrangler deploy`（本番反映） |
 | `npm run db:migrate:local` | ローカル D1 にマイグレーションを適用 |
 | `npm run db:migrate:remote` | 本番 D1 にマイグレーションを適用 |
+| `npm run db:rescore:local` / `:remote` | 全診断の総合スコア・タイプを現在の採点式で計算し直し、スコア分布を作り直す（採点式や正解価格を変えたとき。`-- --dry-run` で集計の表示だけ） |
 | `npm run db:refresh:local` / `:remote` | 回答ログの集計対象（`in_range`）を付け直し、設問別集計とスコア分布を作り直す（migration 0003 の適用直後や、集計対象の範囲・正解価格を変えたとき） |
 | `npm run synthetic:generate` | 生成データ（架空の回答者の回答）の投入 SQL を `scripts/synthetic-data/out/insert.sql` に書き出す |
 | `npm run synthetic:insert:local` / `:remote` | 生成データをローカル / 本番 D1 に投入 |
+| `npm run synthetic:regenerate:local` / `:remote` | 既存の生成データの回答の値を上書きして作り直す（行は残すので書き込みは約5万行。削除して入れ直すと約30万行） |
 | `npm run synthetic:delete:local` / `:remote` | 生成データをローカル / 本番 D1 から削除（実ユーザーの回答は残る） |
 | `npm run seo:images` | OGP 画像とアイコンを `public/` に書き出す（Google Chrome が必要。[scripts/seo/README.md](../../scripts/seo/README.md)） |
 | `npm run lint` | oxlint |
@@ -109,17 +111,21 @@ npm run deploy
 3. `npm run db:migrate:remote` を実行する。
 4. `npm run deploy` を実行する。
 
-### 5.3 回答集計の改修（migration 0003）の反映手順
+### 5.3 回答集計・採点式の改修（migration 0003）の反映手順
 
-未回答の除去・集計対象（`in_range`）・スコア分布（`score_counts`）を入れた変更（2026-10-11）を本番に出すときは、次の順に行う。書き込みは合計約2,000行。
+未回答の除去・集計対象（`in_range`）・スコア分布（`score_counts`）・出題数（`question_count`）・新しい採点式・生成データの作り直しを入れた変更（2026-10-11）を本番に出すときは、**D1 の書き込み上限がリセットされた日に**、次の順に行う。書き込みは合計約5.5万行（無料プランの上限は1日10万行。うち約5万行が 3）。
 
-1. `npm run db:migrate:remote`（0003: 0円の行の削除・列とテーブルの追加・集計の作り直し）
-2. `npm run db:refresh:remote`（範囲外の回答に `in_range = 0` を付け、集計を作り直す）
-3. `npm run deploy`（新しい API と画面。`wrangler.toml` の回数制限も反映される）
+1. `npm run db:migrate:remote`（0003: 出題数の記録・0円の行の削除・列とテーブルの追加・集計の作り直し）
+2. `npm run deploy`（新しい API と画面・採点式。`wrangler.toml` の回数制限も反映される）
+3. `npm run synthetic:regenerate:remote`（生成データの回答を、実ユーザーに近い外れ方で上書きする。総合スコア・タイプ・集計対象も新しい式で入る）
+4. `npm run db:refresh:remote`（実ユーザーの回答に集計対象の印を付け、集計を作り直す）
+5. `npm run db:rescore:remote`（実ユーザーの診断の総合スコア・バイアス・タイプを新しい採点式で計算し直し、スコア分布を作り直す）
 
-1 と 3 の間は、旧 API が新しい列を使わずに動く（新しい列は既定値のまま）。3 のあとに 2 をもう一度実行すれば、その間の回答も含めて正しく作り直せる。
+- 1 と 2 の間は、旧 API が新しい列を使わずに動く（`question_count` は空、`in_range` は既定値の 1）。計算し直し（5）は `question_count` が空なら回答ログの行数を出題数とみなす。
+- 5 をデプロイ（2）より後にするのは、その間に旧 API が旧い採点式で採点した診断も含めて計算し直すため。
+- 3 は 4・5 より前に行う（3 が生成データの集計対象の印を入れるので、4 で書き換える行が少なくなる）。
 
-### 5.3 初回構築（参考）
+### 5.4 初回構築（参考）
 
 D1 を新しく作る場合の手順:
 
@@ -132,7 +138,7 @@ npm run deploy
 
 Worker の D1 バインディング（`DB` → `bukka-now-db`）と Custom Domain は、`wrangler.toml` から反映される。
 
-### 5.4 Pages からの移行時のドメイン付け替え（2026-10-11 に実施済み。記録として残す）
+### 5.5 Pages からの移行時のドメイン付け替え（2026-10-11 に実施済み。記録として残す）
 
 `bukka-now.miiiwa.com` が Pages プロジェクトに接続されたままだと、DNS レコードが残っているため `wrangler deploy` での Custom Domain 作成が失敗する。次の順で付け替える。
 

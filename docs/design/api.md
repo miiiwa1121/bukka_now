@@ -151,11 +151,11 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
 | `totalScore` | 総合スコア（0〜100） |
 | `topPercentile` | 上位何%（0.1〜100、小数1桁）。これまでの全診断の総合スコア（`score_counts`）と比べた順位。算出方法は [quiz_data.md](quiz_data.md) |
 | `senseType.code` | `master` / `timeslip` / `panic` / `rough` |
-| `biasScore` | 平均バイアス（負なら安く、正なら高く見積もる傾向）。回答した設問だけで平均する |
+| `biasScore` | 平均バイアス。回答と正解の比率の対数 `ln(回答/正解)` の平均（負なら安く、正なら高く見積もる傾向。±0.08 で約8%）。回答した設問だけで平均する |
 | `biasTendency` | `balanced`（master）/ `underestimated`（timeslip）/ `overestimated`（panic）/ `volatile`（rough） |
 | `questionResults[].distribution` | 10分割ヒストグラムのビン。算出方法は [quiz_data.md](quiz_data.md) を参照 |
 | `questionResults[].userAnswer` | 回答金額。未回答は `null` |
-| `questionResults[].score` / `errorRate` | 設問スコアと誤差率。未回答は 0点、`errorRate` は `null` |
+| `questionResults[].score` / `errorRate` | 設問スコア（正解の3倍・3分の1で0点。算出方法は [quiz_data.md](quiz_data.md)）と相対誤差率。未回答は 0点、`errorRate` は `null` |
 | `questionResults[].averageExpected` | 集計対象（正解の 1/5〜5倍）の回答の平均（四捨五入）。今回の回答も対象なら含める。対象がなければ `null` |
 | `questionResults[].totalResponses` | 今回の回答を含めた累計回答数（`item_aggregates.total_responses` ＋ 回答していれば1）。集計対象外の回答も数える |
 | `questionResults[].minAnswer` / `maxAnswer` | 集計対象の回答の最低値・最高値（今回の回答も対象なら含める）。対象がなければ `null` |

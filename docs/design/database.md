@@ -35,8 +35,9 @@ erDiagram
 | `id` | TEXT | PRIMARY KEY | 実ユーザー: `sub_<epochミリ秒>_<ランダム7文字>` / 生成データ: `syn_<バッチ epochミリ秒>_<連番4桁>` |
 | `total_score` | INTEGER | NOT NULL | 総合スコア（0〜100） |
 | `sense_type` | TEXT | NOT NULL | タイプコード（`master` / `timeslip` / `panic` / `rough`） |
-| `bias_score` | REAL | NOT NULL | 平均バイアス |
+| `bias_score` | REAL | NOT NULL | 平均バイアス（回答と正解の比率の対数の平均。正なら高め・負なら安め）。2026-10-11 に相対誤差の平均から変更し、`db:rescore` で計算し直す |
 | `source` | TEXT | NOT NULL DEFAULT `'user'` | データの出どころ。`user`: 実ユーザー（API 経由）/ `synthetic`: 生成データ。0002 で追加 |
+| `question_count` | INTEGER | | 出題数（未回答を含む）。総合スコアを計算し直すときの分母。0003 で追加（既存行は 0円の行を消す前の回答ログの行数で埋めた） |
 | `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | 受信日時（生成データは投入した時刻） |
 
 インデックス: `idx_submissions_source(source)`
@@ -50,7 +51,7 @@ erDiagram
 | `question_id` | TEXT | NOT NULL | 設問ID（`s` ＋ 銘柄符号。例: `s1001`、量に換算した品目は `s1407-200g`。2026-10-11 以前の旧問題は `q1`〜`q100`） |
 | `user_answer` | REAL | NOT NULL | 回答金額（円） |
 | `error_rate` | REAL | NOT NULL | 相対誤差率 `|回答 - 正解| / 正解`（小数3桁） |
-| `score` | INTEGER | NOT NULL | 設問スコア（0〜100） |
+| `score` | INTEGER | NOT NULL | 設問スコア（0〜100）。**採点した時点の式**による（2026-10-11 の採点式の変更で書き換えていない。現在の式での値は `user_answer` から出し直す） |
 | `in_range` | INTEGER | NOT NULL DEFAULT 1 | 集計対象か。1: 正解の 1/5〜5倍、0: 範囲外。0003 で追加 |
 | `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | 回答日時 |
 
@@ -95,7 +96,7 @@ erDiagram
 | 同上（出題分だけ） | `POST /api/quiz/submit` | `SELECT ... FROM item_aggregates WHERE question_id IN (...)` | 出題数 |
 | スコア分布・累計回答者数 | 3つとも | `SELECT total_score, submissions FROM score_counts` | 最大101 |
 | 分布用の過去回答 | `POST /api/quiz/submit`（設問ごとに1文） | `SELECT user_answer FROM quiz_answers WHERE question_id = ? ORDER BY id DESC LIMIT 500` | 設問あたり最大500前後 |
-| セッション保存 | `POST /api/quiz/submit` | `INSERT INTO quiz_submissions (id, total_score, sense_type, bias_score)` | — |
+| セッション保存 | `POST /api/quiz/submit` | `INSERT INTO quiz_submissions (id, total_score, sense_type, bias_score, question_count)` | — |
 | スコア分布の更新 | 同上 | `INSERT INTO score_counts ... ON CONFLICT(total_score) DO UPDATE SET submissions + 1` | — |
 | 回答保存 | 同上（回答した設問ごと） | `INSERT INTO quiz_answers (..., in_range)` | — |
 | 集計更新 | 同上（回答した設問ごと） | `INSERT INTO item_aggregates ... ON CONFLICT(question_id) DO UPDATE`。回答数 +1。集計対象なら対象数・合計・平均・最低値・最高値も更新 | — |
@@ -118,7 +119,7 @@ erDiagram
 | :--- | :--- |
 | `0001_initial_schema.sql` | 3テーブルとインデックスの作成（データなし） |
 | `0002_add_submission_source.sql` | `quiz_submissions.source` と `idx_submissions_source` の追加。既存行は `user` になる |
-| `0003_in_range_and_score_counts.sql` | 0円（未回答）の回答ログを削除。`quiz_answers.in_range`、`item_aggregates` の `in_range_responses` / `min_answer` / `max_answer`、`score_counts` を追加し、集計を作り直す。適用後に `npm run db:refresh:*` で範囲外の印を付ける |
+| `0003_in_range_and_score_counts.sql` | `quiz_submissions.question_count` を追加して出題数を記録。0円（未回答）の回答ログを削除。`quiz_answers.in_range`、`item_aggregates` の `in_range_responses` / `min_answer` / `max_answer`、`score_counts` を追加し、集計を作り直す。適用後に `npm run db:refresh:*` で範囲外の印を付ける |
 
 ---
 
@@ -128,7 +129,7 @@ erDiagram
 
 - **見分け方**: `quiz_submissions.source = 'synthetic'`、ID が `syn_` で始まる。`quiz_answers` は `submission_id` で `quiz_submissions` と結合して判別する。
 - **集計への反映**: 画面に出る値（累計回答者数・設問別回答者数・世間平均・分布・最低値・最高値）には生成データも含まれる。API は `source` を見ていない。
-- **投入済み**: 2026-10-11 に本番・ローカルの両方へ 500人 × 100問（回答50,000行、seed `20261011`）を投入した。
+- **投入済み**: 2026-10-11 に本番・ローカルの両方へ 500人 × 100問（回答50,000行、seed `20261011`）を投入した。その後、実ユーザーに近い外れ方で回答の値を上書きした（`npm run synthetic:regenerate:*`、seed `20261012`。行は残す）。
 
 ```sql
 -- 実ユーザーだけの件数
@@ -158,6 +159,7 @@ GROUP BY a.question_id;
 | ファイル / コマンド | 内容 | いつ使う |
 | :--- | :--- | :--- |
 | `scripts/db/rebuild_aggregates.sql` | `item_aggregates` と `score_counts` を回答ログ・診断ログから作り直す | 生成データの投入・削除のあと（各スクリプトが自動で実行） |
+| `npm run db:rescore:local` / `:remote` | `scripts/db/rescore.ts` が全診断の総合スコア・バイアス・タイプを現在の採点式で計算し直し（変わる行だけ UPDATE）、続けて上の作り直しを実行する。`quiz_answers.score` は書き換えない | 採点式（`scoreQuestion`）や正解価格を変えたとき |
 | `npm run db:refresh:local` / `:remote` | `scripts/db/refresh.ts` で設問ごとの `in_range` 付け直し SQL を生成し、続けて上の作り直しを実行する | migration 0003 の適用直後 / 範囲（`server/aggregation.ts`）や正解価格を変えたとき |
 
 - 付け直しは、判定が変わる行だけを UPDATE する（書き込み行数を抑えるため）。2026-10-11 時点のデータでは約500行。
