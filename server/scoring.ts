@@ -83,24 +83,10 @@ export function generateDistribution(
     binsDef.push({ label, min: bMin, max: bMax });
   }
 
-  // 母集団サンプル（正規分布風の分布モデル）
-  const baseSeed: number[] = [];
-  const sampleCount = 60;
-  for (let s = 0; s < sampleCount; s++) {
-    // Box-Muller変換で正規乱数を生成
-    const u1 = Math.max(1e-6, Math.random());
-    const u2 = Math.random();
-    const randNorm = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-    // 平均 actualPrice、標準偏差 actualPrice * 0.22
-    const sampleVal = Math.round(actualPrice + randNorm * (actualPrice * 0.22));
-    if (sampleVal > 0) {
-      baseSeed.push(sampleVal);
-    }
-  }
-
+  // 実際のユーザー回答データのみを使用（モックデータは一切使用しない）
   const samples = allAnswersForQuestion.length > 0
     ? [...allAnswersForQuestion, userAnswer]
-    : [...baseSeed, userAnswer];
+    : [userAnswer];
 
   const totalResponses = samples.length;
   const minAnswer = Math.min(...samples);
@@ -143,7 +129,7 @@ export function calculateQuizResult(
     const q = masterMap.get(answerItem.questionId);
     if (!q) continue;
 
-    const userAnswer = answerItem.answer;
+    const userAnswer = Number(answerItem.answer ?? (answerItem as unknown as Record<string, unknown>).userAnswer) || 0;
     const actual = q.actualPrice;
 
     // 相対誤差率

@@ -18,19 +18,18 @@ interface AggregateData {
 }
 
 /**
- * 設問別世間平均値および回答者数の取得
+ * 設問別世間平均値および回答者数の取得（実データのみを使用、モックデータ全廃）
  */
 async function getAggregatedStats(db?: D1Database): Promise<AggregateData> {
   const defaultAverages: Record<string, number> = {};
   const defaultCounts: Record<string, number> = {};
 
   for (const q of QUIZ_MASTER) {
-    // 設問ごとにリアルな初期回答者数を設定
-    defaultAverages[q.id] = Math.round(q.actualPrice * 0.96);
-    defaultCounts[q.id] = 120 + ((q.id.charCodeAt(1) || 5) * 7) % 65;
+    defaultAverages[q.id] = q.actualPrice;
+    defaultCounts[q.id] = 0;
   }
 
-  let totalParticipants = 1420;
+  let totalParticipants = 0;
 
   if (!db) {
     return { averages: defaultAverages, counts: defaultCounts, totalParticipants };
@@ -51,8 +50,8 @@ async function getAggregatedStats(db?: D1Database): Promise<AggregateData> {
     const subCount = await db
       .prepare('SELECT COUNT(*) as count FROM quiz_submissions')
       .first<{ count: number }>();
-    if (subCount && subCount.count > 0) {
-      totalParticipants += subCount.count;
+    if (subCount) {
+      totalParticipants = subCount.count;
     }
   } catch (err) {
     console.error('Failed to query D1 item_aggregates:', err);
@@ -81,7 +80,7 @@ app.get('/api/quiz', async (c) => {
     return {
       ...rest,
       averageExpected: Math.round(averages[q.id] ?? q.actualPrice),
-      totalResponses: counts[q.id] ?? 128,
+      totalResponses: counts[q.id] ?? 0,
     };
   });
 

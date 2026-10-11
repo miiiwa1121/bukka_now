@@ -16,7 +16,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
   questionCount,
   onQuestionCountChange,
   onStart,
-  totalParticipants = 1420,
+  totalParticipants = 0,
   isLoading = false,
 }) => {
   return (

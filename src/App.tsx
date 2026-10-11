@@ -12,7 +12,7 @@ const QUESTION_TIME_LIMIT = 10;
 export const App: React.FC = () => {
   const [view, setView] = useState<'landing' | 'quiz' | 'result'>('landing');
   const [questionCount, setQuestionCount] = useState<number>(10);
-  const [totalParticipants, setTotalParticipants] = useState<number>(1420);
+  const [totalParticipants, setTotalParticipants] = useState<number>(0);
   const [questions, setQuestions] = useState<PublicQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
