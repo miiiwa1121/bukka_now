@@ -18,7 +18,7 @@
 | コマンド | 内容 |
 | :--- | :--- |
 | `npm run dev` | Vite 開発サーバー＋Hono API（`@hono/vite-dev-server`）。**D1 なし** |
-| `npm run build` | `tsc -b`（型チェック）＋ `vite build` → `dist/` |
+| `npm run build` | `tsc -b`（型チェック）＋ `vite build` → `dist/`、最後に `scripts/seo/prerender.ts` でトップ画面の HTML を `dist/index.html` に書き込む |
 | `npm run preview` | `wrangler dev`（`dist/` を Static Assets として配信し、`wrangler.toml` の D1 バインディングでローカル D1 に接続して本番同等に動かす） |
 | `npm run deploy` | build のあと `wrangler deploy`（本番反映） |
 | `npm run db:migrate:local` | ローカル D1 にマイグレーションを適用 |
@@ -26,6 +26,7 @@
 | `npm run synthetic:generate` | 生成データ（架空の回答者の回答）の投入 SQL を `scripts/synthetic-data/out/insert.sql` に書き出す |
 | `npm run synthetic:insert:local` / `:remote` | 生成データをローカル / 本番 D1 に投入 |
 | `npm run synthetic:delete:local` / `:remote` | 生成データをローカル / 本番 D1 から削除（実ユーザーの回答は残る） |
+| `npm run seo:images` | OGP 画像とアイコンを `public/` に書き出す（Google Chrome が必要。[scripts/seo/README.md](../../scripts/seo/README.md)） |
 | `npm run lint` | oxlint |
 
 ---

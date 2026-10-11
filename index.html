@@ -4,28 +4,76 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>bukka_now | 物価意識スコア診断</title>
-  <meta name="description" content="日用品・食品・サービスの相場価格クイズに数字で回答し、上位何％の物価意識スコアかを診断。全体の回答分布をリアルタイムに確認できます。" />
+  <title>物価意識スコア診断｜値段当てクイズで物価感覚をチェック - bukka_now</title>
+  <meta name="description" content="お米5kg、食パン1斤、カップヌードルはいくら？日用品・食品・サービスの値段を当てるクイズで、あなたの物価感覚を診断。正解は総務省「小売物価統計調査」の東京都区部価格。ほかの回答者の予想分布や、1950年からの価格推移も見られます。" />
+  <link rel="canonical" href="https://bukka-now.miiiwa.com/" />
+  <meta name="theme-color" content="#f5f2eb" />
 
-  <!-- OGP / SNS Meta Tags -->
-  <meta property="og:title" content="bukka_now | 物価意識スコア診断" />
-  <meta property="og:description" content="あなたの物価感覚を測定。テンキー入力クイズで全体の回答分布とあなたの意識スコア順位をリアルタイム診断。" />
+  <!-- OGP / SNS -->
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="bukka_now" />
+  <meta property="og:locale" content="ja_JP" />
+  <meta property="og:url" content="https://bukka-now.miiiwa.com/" />
+  <meta property="og:title" content="物価意識スコア診断｜値段当てクイズで物価感覚をチェック" />
+  <meta property="og:description" content="日用品・食品・サービスの値段を当てるクイズで、あなたの物価感覚が上位何％かを診断。ほかの回答者の予想分布や、価格の推移も見られます。" />
+  <meta property="og:image" content="https://bukka-now.miiiwa.com/ogp.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="bukka_now 物価意識スコア診断。お米（コシヒカリ・5kg袋）はいくら？" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@miiiwa3330" />
+  <meta name="twitter:title" content="物価意識スコア診断｜値段当てクイズで物価感覚をチェック" />
+  <meta name="twitter:description" content="日用品・食品・サービスの値段を当てるクイズで、あなたの物価感覚が上位何％かを診断。" />
+  <meta name="twitter:image" content="https://bukka-now.miiiwa.com/ogp.png" />
 
-  <!-- Google Fonts: Outfit & Noto Sans JP -->
+  <!-- アイコン（unpis 風ラインアート。絵文字不使用） -->
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <!-- 構造化データ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://bukka-now.miiiwa.com/#website",
+        "url": "https://bukka-now.miiiwa.com/",
+        "name": "bukka_now",
+        "alternateName": "物価意識スコア診断",
+        "inLanguage": "ja"
+      },
+      {
+        "@type": "WebApplication",
+        "name": "物価意識スコア診断",
+        "url": "https://bukka-now.miiiwa.com/",
+        "description": "日用品・食品・サービスの値段を当てるクイズで、物価感覚を診断する無料の Web アプリ。正解価格は総務省統計局「小売物価統計調査」の東京都区部の年平均価格。",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "All",
+        "browserRequirements": "Requires JavaScript",
+        "inLanguage": "ja",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" },
+        "isPartOf": { "@id": "https://bukka-now.miiiwa.com/#website" },
+        "author": { "@type": "Person", "name": "miiiwa3330", "url": "https://x.com/miiiwa3330" }
+      }
+    ]
+  }
+  </script>
+
+  <!-- Google Fonts: Outfit & Noto Sans JP
+       どちらも可変フォントなので、太さは範囲で指定する（1つずつ列挙すると同じ @font-face が太さの数だけ並び、CSS が約5倍になる）
+       Noto Sans JP は 800 まで（CSS の 900 は 800 で表示する。従来どおり） -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400..800&family=Outfit:wght@400..900&display=swap"
     rel="stylesheet">
-
-  <!-- Unpis-inspired Line Art Favicon (No Emoji) -->
-  <link rel="icon" type="image/svg+xml"
-    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23ffffff' stroke='%23191919' stroke-width='8'/><path d='M25 65 L45 42 L62 52 L78 30' stroke='%23191919' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' fill='none'/><circle cx='78' cy='30' r='9' fill='%23eb4634' stroke='%23191919' stroke-width='6'/></svg>" />
 </head>
 
 <body>
+  <!-- 本番ビルドでは scripts/seo/prerender.ts がトップ画面の HTML をここに書き込む -->
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>

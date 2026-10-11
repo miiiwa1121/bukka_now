@@ -23,7 +23,7 @@ graph TB
     Fn <--> |binding: DB| D1
 ```
 
-- **Workers Static Assets**: Vite のビルド成果物（`dist/`）を配信する。存在しないパスは `index.html` を返す（`not_found_handling = "single-page-application"`）。
+- **Workers Static Assets**: Vite のビルド成果物（`dist/`）を配信する。存在しないパスは `index.html` を返す（`not_found_handling = "single-page-application"`）。`dist/index.html` にはビルド時にトップ画面の HTML を書き込んである（プリレンダー。[seo.md](seo.md)）。
 - **Worker + Hono**: `wrangler.toml` の `assets.run_worker_first = ["/api/*"]` により、`/api/*` へのリクエストだけが Worker（`server/index.ts`）に届き、`server/app.ts` の Hono アプリが処理する。出題、採点、集計、D1 への保存を担当する。それ以外のリクエストは Worker を起動せずにアセットとして返る。
 - **Cloudflare D1**: 匿名の回答ログと設問別の集計を保存する。スキーマは [database.md](database.md) を参照。
 - **デプロイ方式**: Git 連携ではなく `npm run deploy`（`wrangler deploy`）で手動反映する。
@@ -62,7 +62,8 @@ bukka_now/
 │   └── types/quiz.ts           # フロント・サーバー共通型
 ├── scripts/quiz-data/          # 小売物価統計調査からクイズマスターを生成するスクリプト（Python）
 ├── scripts/synthetic-data/     # 架空の回答者の回答を生成し D1 に投入・削除するスクリプト（TypeScript）
-├── public/                     # favicon 等
+├── scripts/seo/                # プリレンダー（build の最後に実行）・OGP 画像とアイコンの生成
+├── public/                     # favicon・apple-touch-icon・OGP 画像・robots.txt・sitemap.xml
 ├── wrangler.toml               # Worker 設定（エントリ・Static Assets・ドメイン）・D1 バインディング
 ├── vite.config.ts              # React + @hono/vite-dev-server（dev 時に /api を Hono へ）
 └── package.json
@@ -87,7 +88,8 @@ API は `c.env.DB` がない場合でも落ちないように作ってある。�
 ## 4. 通信・データフロー
 
 ### 4.1 起動時・トップ画面
-1. `App.tsx` がマウント時に `GET /api/quiz?count=10` を呼び、`totalParticipants`（累計回答者数）だけを使う。
+1. 本番では、プリレンダー済みの HTML がまず表示され、`src/main.tsx` の `hydrateRoot` が React に引き継ぐ。
+2. `App.tsx` がマウント時に `GET /api/quiz?count=10` を呼び、`totalParticipants`（累計回答者数）だけを使う。
 
 ### 4.2 クイズ開始時
 1. `GET /api/quiz?count=N` を呼ぶ。

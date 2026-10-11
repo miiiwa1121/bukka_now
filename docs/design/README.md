@@ -8,3 +8,4 @@
 - [database.md](database.md): Cloudflare D1 データベーススキーマ設計
 - [api.md](api.md): Hono API エンドポイント仕様書
 - [quiz_data.md](quiz_data.md): 100問の物価マスターデータ・スコア計算・分布集計・タイプ判定仕様
+- [seo.md](seo.md): SEO（head・OGP・構造化データ・robots/sitemap・プリレンダー）

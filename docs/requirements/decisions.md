@@ -420,3 +420,23 @@
   6. 回答日時は投入した時刻とする。
 - **理由**: 回答が少ない状態では、世間平均と分布がほとんど意味を持たないため。一方で、本物の回答だけを後から分析・削除できるようにしておく必要がある。
 - **影響**: [Cloudflare Pages / D1 本番デプロイ & 本格DB連携](#2026-10-11-cloudflare-pages--d1-本番デプロイ--本格db連携カスタムドメイン方針) の「モックデータの全廃」と、database.md の「シードデータは投入しない」方針は、「コードに値を書かない」点では維持する。ただし「集計は実回答だけ」という点はこの決定で変わる。生成データの消し方は `scripts/synthetic-data/delete.sql`。
+
+---
+
+## 2026-10-11: SEO 対策（head 整備・OGP 画像・robots/sitemap・プリレンダー）
+- **決定内容**（開発者の依頼「SEO してください」）:
+  1. インデックス対象はトップ（`https://bukka-now.miiiwa.com/`）の1ページだけとする。設問ごとのページは作らない（正解価格が公開されてしまうため）。
+  2. `index.html` の head を整える。検索語（物価・値段当て・クイズ・診断）と具体的な設問例を入れた title / description、canonical、OGP と Twitter カード一式、JSON-LD（`WebSite` / `WebApplication`）、theme-color、アイコン。
+  3. OGP 画像（1200×630）、`apple-touch-icon.png`、`favicon.ico` を作る。`public/favicon.svg` は Vite の初期ロゴのままだったため、ヘッダーと同じラインアートに差し替える。
+  4. `robots.txt`（`/api/` は不許可）と `sitemap.xml` を置く。
+  5. ビルド時にトップ画面をプリレンダーし、クライアントは `hydrateRoot` で引き継ぐ。JavaScript を実行しないクローラーにも本文と h1 を見せるため。
+- **理由**: これまでは本文が空の SPA で、`twitter:card` が `summary_large_image` なのに画像がなく、canonical もなかった。`workers.dev` と Custom Domain で同じ内容が出ている。
+- **詳細**: [design/seo.md](../design/seo.md)
+
+---
+
+## 2026-10-11: Google Fonts の太さを範囲指定にする
+- **決定内容**: `index.html` の Google Fonts の指定を、太さの列挙（`400;500;600;700;800`）から範囲（Noto Sans JP `400..800`、Outfit `400..900`）に変える。
+- **理由**: 当初は「使っている太さだけに絞る」予定だった。しかし調べると、CSS で 400〜900 の6段階すべてを使っていた。一方で、両書体とも可変フォントのため、列挙すると同じファイルを指す `@font-face` が太さの数だけ並んでいた。範囲指定で、表示前に読み込む CSS が 578KB → 116KB（gzip で 152KB → 30KB）になる。フォントファイルは変わらない。
+- **見た目**: 変わらない。Noto Sans JP は従来どおり 800 まで（CSS の 900 は 800 で表示）。トップ画面のスクリーンショットが変更前後でバイト単位で一致することを確認した。
+- **詳細**: [design/seo.md](../design/seo.md) の「6. 表示速度（Web フォント）」

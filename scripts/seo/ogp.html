@@ -1,0 +1,83 @@
+<!doctype html>
+<!-- scripts/seo/ogp.html: OGP 画像（1200×630）の元。render-images.ts が Chrome で撮影して public/ogp.png にする -->
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;800&family=Outfit:wght@700;800&display=block"
+    rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 1200px; height: 630px; overflow: hidden; }
+    body {
+      background: #f5f2eb;
+      color: #191919;
+      font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+      padding: 56px 72px;
+      display: flex;
+      flex-direction: column;
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-name { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 40px; letter-spacing: -0.01em; }
+    .main { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 48px; }
+    .copy { flex: 1; }
+    .title { font-family: 'Noto Sans JP', sans-serif; font-weight: 800; font-size: 84px; line-height: 1.15; letter-spacing: -0.02em; }
+    .title .accent { color: #eb4634; }
+    .lead { margin-top: 24px; font-family: 'Noto Sans JP', sans-serif; font-weight: 500; font-size: 28px; line-height: 1.6; color: #5f5c56; }
+    .card {
+      width: 380px;
+      background: #ffffff;
+      border: 3px solid #191919;
+      border-radius: 20px;
+      padding: 32px 30px;
+      font-family: 'Noto Sans JP', sans-serif;
+    }
+    .card-label { font-size: 20px; font-weight: 700; color: #8c8880; }
+    .card-q { margin-top: 10px; font-size: 32px; font-weight: 800; line-height: 1.35; }
+    .card-answer {
+      margin-top: 24px;
+      border: 3px solid #191919;
+      border-radius: 14px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: baseline;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .card-answer .num { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 56px; color: #eb4634; line-height: 1; }
+    .card-answer .unit { font-size: 28px; font-weight: 700; }
+    .footer { display: flex; justify-content: space-between; align-items: center; font-family: 'Noto Sans JP', sans-serif; font-size: 22px; font-weight: 500; color: #5f5c56; }
+    .url { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 26px; color: #191919; }
+  </style>
+</head>
+
+<body>
+  <div class="brand">
+    <svg width="52" height="52" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="14" fill="#ffffff" stroke="#191919" stroke-width="2.2" />
+      <path d="M9 20L14 14L19 17L23 11" stroke="#191919" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="23" cy="11" r="3" fill="#eb4634" stroke="#191919" stroke-width="1.8" />
+    </svg>
+    <span class="brand-name">bukka_now</span>
+  </div>
+
+  <div class="main">
+    <div class="copy">
+      <h1 class="title">物価意識<br /><span class="accent">スコア</span>診断</h1>
+      <p class="lead">日用品・食品の値段を当てるクイズで<br />あなたの物価感覚を測定</p>
+    </div>
+    <div class="card">
+      <div class="card-label">第 1 問</div>
+      <div class="card-q">お米（コシヒカリ・5kg袋）はいくら？</div>
+      <div class="card-answer"><span class="num">?</span><span class="unit">円</span></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span class="url">bukka-now.miiiwa.com</span>
+    <span>出典: 総務省統計局「小売物価統計調査」</span>
+  </div>
+</body>
+
+</html>

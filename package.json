@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && tsx scripts/seo/prerender.ts",
     "preview": "wrangler dev",
     "deploy": "npm run build && wrangler deploy",
     "db:migrate:local": "echo y | wrangler d1 migrations apply bukka-now-db --local",
@@ -15,6 +15,7 @@
     "synthetic:insert:remote": "wrangler d1 execute bukka-now-db --remote --file scripts/synthetic-data/out/insert.sql",
     "synthetic:delete:local": "wrangler d1 execute bukka-now-db --local --file scripts/synthetic-data/delete.sql",
     "synthetic:delete:remote": "wrangler d1 execute bukka-now-db --remote --file scripts/synthetic-data/delete.sql",
+    "seo:images": "tsx scripts/seo/render-images.ts",
     "lint": "oxlint"
   },
   "dependencies": {
