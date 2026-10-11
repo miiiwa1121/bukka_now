@@ -143,27 +143,29 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
         </div>
       </div>
 
-      {/* 凡例（レジェンド） */}
-      <div className="detailed-plot-legend">
-        <span className="legend-chip">
-          <span className="color-dot user" /> あなたの回答
-        </span>
-        <span className="legend-chip">
-          <span className="color-dot actual" /> 正解（公的相場）
-        </span>
-        <span className="legend-chip">
-          <span className="color-dot avg" /> 世間平均
-        </span>
-        <span className="legend-chip">
-          <span className="color-dot stripe" /> 重なり
-        </span>
-        <span className="legend-chip">
-          <span className="color-dot general" /> 一般回答
-        </span>
-      </div>
+      {/* 統一グラフコンテナ */}
+      <div className="unified-chart-container detailed-chart-container">
+        {/* 凡例（レジェンド） */}
+        <div className="detailed-plot-legend">
+          <span className="legend-chip">
+            <span className="color-dot user" /> あなたの回答
+          </span>
+          <span className="legend-chip">
+            <span className="color-dot actual" /> 正解（公的相場）
+          </span>
+          <span className="legend-chip">
+            <span className="color-dot avg" /> 世間平均
+          </span>
+          <span className="legend-chip">
+            <span className="color-dot stripe" /> 重なり
+          </span>
+          <span className="legend-chip">
+            <span className="color-dot general" /> 一般回答
+          </span>
+        </div>
 
-      {/* 1単位プロット棒グラフエリア（横スクロール可能・ホワイトボード上の方眼プロット） */}
-      <div className="detailed-chart-viewport">
+        {/* 1単位プロット棒グラフエリア（横スクロール可能・ホワイトボード上の方眼プロット） */}
+        <div className="detailed-chart-viewport">
         <div className="plot-canvas-grid">
           {/* Y軸の目盛り */}
           <div className="plot-y-axis">
@@ -232,6 +234,7 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
           </div>
         )}
       </div>
+    </div>
 
       {/* 統一注記・解説 */}
       {item.priceNote && (

@@ -472,75 +472,77 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                     <span>出題別の回答分布・統計（全{result.questionResults.length}問）</span>
                   </div>
 
-                  {result.questionResults.map((item, index) => {
-                    return (
-                      <div key={item.questionId} className="unpis-question-card" id={`result-card-${item.questionId}`}>
-                        {/* 統一ヘッダー */}
-                        <div className="unified-card-header">
-                          <div className="unified-header-left">
-                            <span className="unified-q-badge">Q{index + 1}</span>
-                            <span className="unified-cat-badge">{item.categoryLabel}</span>
-                            <h3 className="unified-q-title">{item.title}</h3>
+                  <div className="unified-board-cards-list">
+                    {result.questionResults.map((item, index) => {
+                      return (
+                        <div key={item.questionId} className="unpis-question-card" id={`result-card-${item.questionId}`}>
+                          {/* 統一ヘッダー */}
+                          <div className="unified-card-header">
+                            <div className="unified-header-left">
+                              <span className="unified-q-badge">Q{index + 1}</span>
+                              <span className="unified-cat-badge">{item.categoryLabel}</span>
+                              <h3 className="unified-q-title">{item.title}</h3>
+                            </div>
+                            <div className="unified-header-right">
+                              <span className="unified-meta-pill">
+                                回答者数: <strong>{item.totalResponses.toLocaleString()}</strong>人
+                              </span>
+                            </div>
                           </div>
-                          <div className="unified-header-right">
-                            <span className="unified-meta-pill">
-                              回答者数: <strong>{item.totalResponses.toLocaleString()}</strong>人
-                            </span>
+
+                          {/* 統一メトリクスグリッド（5カラム） */}
+                          <div className="unified-metrics-grid grid-five">
+                            <div className="unified-stat-cell you">
+                              <span className="unified-stat-label">あなたの回答</span>
+                              <span className="unified-stat-val">{item.userAnswer.toLocaleString()}{item.unit}</span>
+                              <span className="unified-stat-sub">自己予想値</span>
+                            </div>
+
+                            <div className="unified-stat-cell actual">
+                              <span className="unified-stat-label">正解（公的相場）</span>
+                              <span className="unified-stat-val">{item.actualPrice.toLocaleString()}{item.unit}</span>
+                              <span className="unified-stat-sub">公定価格</span>
+                            </div>
+
+                            <div className="unified-stat-cell avg">
+                              <span className="unified-stat-label">全体平均</span>
+                              <span className="unified-stat-val">{item.averageExpected.toLocaleString()}{item.unit}</span>
+                              <span className="unified-stat-sub">回答平均値</span>
+                            </div>
+
+                            <div className="unified-stat-cell min">
+                              <span className="unified-stat-label">最低値（MIN）</span>
+                              <span className="unified-stat-val">{item.minAnswer.toLocaleString()}{item.unit}</span>
+                              <span className="unified-stat-sub">最小回答</span>
+                            </div>
+
+                            <div className="unified-stat-cell max">
+                              <span className="unified-stat-label">最高値（MAX）</span>
+                              <span className="unified-stat-val">{item.maxAnswer.toLocaleString()}{item.unit}</span>
+                              <span className="unified-stat-sub">最大回答</span>
+                            </div>
                           </div>
+
+                          <div className="unified-chart-container">
+                            <DistributionBarChart
+                              distribution={item.distribution}
+                              userAnswer={item.userAnswer}
+                              actualPrice={item.actualPrice}
+                              minAnswer={item.minAnswer}
+                              maxAnswer={item.maxAnswer}
+                              unit={item.unit}
+                            />
+                          </div>
+
+                          {item.priceNote && (
+                            <p className="unified-note-text">
+                              <span className="note-strong">品目概要:</span> {item.priceNote}
+                            </p>
+                          )}
                         </div>
-
-                        {/* 統一メトリクスグリッド（5カラム） */}
-                        <div className="unified-metrics-grid grid-five">
-                          <div className="unified-stat-cell you">
-                            <span className="unified-stat-label">あなたの回答</span>
-                            <span className="unified-stat-val">{item.userAnswer.toLocaleString()}{item.unit}</span>
-                            <span className="unified-stat-sub">自己予想値</span>
-                          </div>
-
-                          <div className="unified-stat-cell actual">
-                            <span className="unified-stat-label">正解（公的相場）</span>
-                            <span className="unified-stat-val">{item.actualPrice.toLocaleString()}{item.unit}</span>
-                            <span className="unified-stat-sub">公定価格</span>
-                          </div>
-
-                          <div className="unified-stat-cell avg">
-                            <span className="unified-stat-label">全体平均</span>
-                            <span className="unified-stat-val">{item.averageExpected.toLocaleString()}{item.unit}</span>
-                            <span className="unified-stat-sub">回答平均値</span>
-                          </div>
-
-                          <div className="unified-stat-cell min">
-                            <span className="unified-stat-label">最低値（MIN）</span>
-                            <span className="unified-stat-val">{item.minAnswer.toLocaleString()}{item.unit}</span>
-                            <span className="unified-stat-sub">最小回答</span>
-                          </div>
-
-                          <div className="unified-stat-cell max">
-                            <span className="unified-stat-label">最高値（MAX）</span>
-                            <span className="unified-stat-val">{item.maxAnswer.toLocaleString()}{item.unit}</span>
-                            <span className="unified-stat-sub">最大回答</span>
-                          </div>
-                        </div>
-
-                        <div className="unified-chart-container">
-                          <DistributionBarChart
-                            distribution={item.distribution}
-                            userAnswer={item.userAnswer}
-                            actualPrice={item.actualPrice}
-                            minAnswer={item.minAnswer}
-                            maxAnswer={item.maxAnswer}
-                            unit={item.unit}
-                          />
-                        </div>
-
-                        {item.priceNote && (
-                          <p className="unified-note-text">
-                            <span className="note-strong">品目概要:</span> {item.priceNote}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
 
                   {/* 最下部アクション */}
                   <div className="result-bottom-actions">
@@ -568,7 +570,7 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                     <span>出題別の1単位プロット棒グラフ（全{result.questionResults.length}問）</span>
                   </div>
 
-                  <div className="detailed-all-questions-list">
+                  <div className="unified-board-cards-list">
                     {result.questionResults.map((qItem, idx) => (
                       <DetailedPlotChart
                         key={qItem.questionId}
@@ -604,7 +606,7 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                     <span>出題別の物価推移・価格変動（全{result.questionResults.length}問）</span>
                   </div>
 
-                  <div className="trend-all-questions-list">
+                  <div className="unified-board-cards-list">
                     {result.questionResults.map((qItem, idx) => (
                       <PriceTrendChart
                         key={qItem.questionId}
