@@ -31,3 +31,6 @@ __pycache__
 
 # 生成データ投入 SQL（scripts/synthetic-data/generate.ts の出力）
 scripts/synthetic-data/out
+
+# 集計の付け直し SQL（scripts/db/refresh.ts の出力）
+scripts/db/out

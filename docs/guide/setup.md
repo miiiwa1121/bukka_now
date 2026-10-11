@@ -23,6 +23,7 @@
 | `npm run deploy` | build のあと `wrangler deploy`（本番反映） |
 | `npm run db:migrate:local` | ローカル D1 にマイグレーションを適用 |
 | `npm run db:migrate:remote` | 本番 D1 にマイグレーションを適用 |
+| `npm run db:refresh:local` / `:remote` | 回答ログの集計対象（`in_range`）を付け直し、設問別集計とスコア分布を作り直す（migration 0003 の適用直後や、集計対象の範囲・正解価格を変えたとき） |
 | `npm run synthetic:generate` | 生成データ（架空の回答者の回答）の投入 SQL を `scripts/synthetic-data/out/insert.sql` に書き出す |
 | `npm run synthetic:insert:local` / `:remote` | 生成データをローカル / 本番 D1 に投入 |
 | `npm run synthetic:delete:local` / `:remote` | 生成データをローカル / 本番 D1 から削除（実ユーザーの回答は残る） |
@@ -107,6 +108,16 @@ npm run deploy
 2. `npm run db:migrate:local` を実行し、`npm run preview` で動作を確認する。
 3. `npm run db:migrate:remote` を実行する。
 4. `npm run deploy` を実行する。
+
+### 5.3 回答集計の改修（migration 0003）の反映手順
+
+未回答の除去・集計対象（`in_range`）・スコア分布（`score_counts`）を入れた変更（2026-10-11）を本番に出すときは、次の順に行う。書き込みは合計約2,000行。
+
+1. `npm run db:migrate:remote`（0003: 0円の行の削除・列とテーブルの追加・集計の作り直し）
+2. `npm run db:refresh:remote`（範囲外の回答に `in_range = 0` を付け、集計を作り直す）
+3. `npm run deploy`（新しい API と画面。`wrangler.toml` の回数制限も反映される）
+
+1 と 3 の間は、旧 API が新しい列を使わずに動く（新しい列は既定値のまま）。3 のあとに 2 をもう一度実行すれば、その間の回答も含めて正しく作り直せる。
 
 ### 5.3 初回構築（参考）
 

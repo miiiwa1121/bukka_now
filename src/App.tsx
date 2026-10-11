@@ -1,13 +1,20 @@
 // src/App.tsx: bukka_now メインアプリケーション（シンプル is best 仕様 ＆ 10秒タイマー搭載）
 
 import React, { useEffect, useRef, useState } from 'react';
+import { ConfirmDialog } from './components/ConfirmDialog';
 import { Header } from './components/Header';
+import { InlineNotice } from './components/InlineNotice';
 import { LandingView } from './components/LandingView';
 import { NumberKeypad } from './components/NumberKeypad';
 import { ResultDashboard } from './components/ResultDashboard';
 import type { PublicQuestion, QuizSubmissionResult, UserAnswerItem } from './types/quiz';
 
 const QUESTION_TIME_LIMIT = 10;
+// 画面内に出すエラーの文言（alert() は使わない）
+const START_RATE_LIMIT_MESSAGE = 'アクセスが集中しています。1分ほど待ってから、もう一度お試しください。';
+const START_ERROR_MESSAGE = 'クイズを読み込めませんでした。通信環境を確認して、もう一度お試しください。';
+const SUBMIT_RATE_LIMIT_MESSAGE = 'アクセスが集中しています。回答はそのまま残っているので、1分ほど待ってから送信し直してください。';
+const SUBMIT_ERROR_MESSAGE = '診断結果を受け取れませんでした。回答はそのまま残っているので、通信環境を確認して送信し直してください。';
 
 export const App: React.FC = () => {
   const [view, setView] = useState<'landing' | 'quiz' | 'result'>('landing');
@@ -15,13 +22,19 @@ export const App: React.FC = () => {
   const [totalParticipants, setTotalParticipants] = useState<number>(0);
   const [questions, setQuestions] = useState<PublicQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  // 設問ID → 回答金額（null は時間切れの未回答）
+  const [answers, setAnswers] = useState<Record<string, number | null>>({});
   const [currentInputValue, setCurrentInputValue] = useState<number>(0);
   const [timeLeft, setTimeLeft] = useState<number>(QUESTION_TIME_LIMIT);
   const [isTimeUpNotice, setIsTimeUpNotice] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<QuizSubmissionResult | null>(null);
+  // 画面内のエラー表示（トップ: 出題の取得失敗 / クイズ: 送信失敗）
+  const [startError, setStartError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  // クイズ中に「トップに戻る」を押したときの確認ダイアログ
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   // currentInputValue と isSubmitting を最新の状態でタイマーから参照するための ref
   const currentInputRef = useRef(currentInputValue);
@@ -46,8 +59,14 @@ export const App: React.FC = () => {
   // 指定設問数でクイズデータをフェッチして開始（DB / APIと本格連携）
   const handleStart = async () => {
     setIsLoading(true);
+    setStartError(null);
     try {
       const res = await fetch(`/api/quiz?count=${questionCount}`);
+      if (res.status === 429) {
+        setStartError(START_RATE_LIMIT_MESSAGE);
+        setIsLoading(false);
+        return;
+      }
       if (!res.ok) {
         throw new Error(`API error: ${res.status}`);
       }
@@ -67,12 +86,70 @@ export const App: React.FC = () => {
       setTimeLeft(QUESTION_TIME_LIMIT);
       setIsTimeUpNotice(false);
       setResult(null);
+      setSubmitError(null);
+      setIsResetConfirmOpen(false);
       setIsLoading(false);
       setView('quiz');
     } catch (err) {
       console.error('Failed to load quiz from API:', err);
-      alert('クイズデータの取得に失敗しました。接続環境を確認して再度お試しください。');
+      setStartError(START_ERROR_MESSAGE);
       setIsLoading(false);
+    }
+  };
+
+  // トップに戻る（確認なし）
+  const goToLanding = () => {
+    setIsResetConfirmOpen(false);
+    setSubmitError(null);
+    setStartError(null);
+    setView('landing');
+  };
+
+  // ロゴ・「最初に戻る」。クイズ中は回答が消えるので確認する（送信中は受け付けない）
+  const handleReset = () => {
+    if (view !== 'quiz') {
+      goToLanding();
+      return;
+    }
+    if (isSubmittingRef.current) return;
+    setIsResetConfirmOpen(true);
+  };
+
+  // 全問の回答を送信して結果画面へ。失敗したら画面内に理由と「もう一度送信」を出す（自動では送り直さない）
+  const submitAnswers = async (finalAnswers: Record<string, number | null>) => {
+    if (isSubmittingRef.current) return;
+    setSubmitError(null);
+    setIsSubmitting(true);
+    const answerPayload: UserAnswerItem[] = Object.entries(finalAnswers).map(([qId, val]) => ({
+      questionId: qId,
+      answer: val,
+    }));
+
+    try {
+      const res = await fetch('/api/quiz/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers: answerPayload }),
+      });
+
+      if (res.status === 429) {
+        setSubmitError(SUBMIT_RATE_LIMIT_MESSAGE);
+        return;
+      }
+      if (!res.ok) {
+        throw new Error(`Submit error: ${res.status}`);
+      }
+
+      const resData = await res.json<QuizSubmissionResult>();
+      setResult(resData);
+      setIsResetConfirmOpen(false);
+      setView('result');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      console.error('Submission failed:', err);
+      setSubmitError(SUBMIT_ERROR_MESSAGE);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -81,15 +158,12 @@ export const App: React.FC = () => {
   const updateCurrentValueForQuestion = (index: number) => {
     const q = questions[index];
     if (!q) return;
-    if (answers[q.id] !== undefined) {
-      setCurrentInputValue(answers[q.id]);
-    } else {
-      setCurrentInputValue(0);
-    }
+    // 未回答（null）や未到達の設問は入力欄を空にする
+    setCurrentInputValue(answers[q.id] ?? 0);
   };
 
   // 回答を確定して次の問題へ（または最終送信）
-  const advanceWithAnswer = async (answerVal: number) => {
+  const advanceWithAnswer = async (answerVal: number | null) => {
     if (!currentQ || isSubmittingRef.current) return;
 
     const newAnswers = {
@@ -106,39 +180,14 @@ export const App: React.FC = () => {
       setIsTimeUpNotice(false);
     } else {
       // 最終問題 -> サーバーAPIへ送信してDBに保存・集計
-      setIsSubmitting(true);
-      const answerPayload: UserAnswerItem[] = Object.entries(newAnswers).map(([qId, val]) => ({
-        questionId: qId,
-        answer: val,
-      }));
-
-      try {
-        const res = await fetch('/api/quiz/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ answers: answerPayload }),
-        });
-
-        if (!res.ok) {
-          throw new Error(`Submit error: ${res.status}`);
-        }
-
-        const resData = await res.json<QuizSubmissionResult>();
-        setResult(resData);
-        setView('result');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } catch (err) {
-        console.error('Submission failed:', err);
-        alert('診断結果の送信・集計処理に失敗しました。');
-      } finally {
-        setIsSubmitting(false);
-      }
+      await submitAnswers(newAnswers);
     }
   };
 
   // 10秒タイマーのインターバル管理
+  // 送信に失敗している間はタイマーを止める（再スタートして自動で送り直すことはしない）
   useEffect(() => {
-    if (view !== 'quiz' || isSubmitting) return;
+    if (view !== 'quiz' || isSubmitting || submitError) return;
 
     setTimeLeft(QUESTION_TIME_LIMIT);
     setIsTimeUpNotice(false);
@@ -154,15 +203,16 @@ export const App: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(timerId);
-  }, [currentIndex, view, isSubmitting]);
+  }, [currentIndex, view, isSubmitting, submitError]);
 
   // 残り時間が0秒になったときのタイムアップ自動遷移
   useEffect(() => {
-    if (view !== 'quiz' || isSubmitting || timeLeft > 0) return;
+    if (view !== 'quiz' || isSubmitting || submitError || timeLeft > 0) return;
 
     setIsTimeUpNotice(true);
     const timeoutId = setTimeout(() => {
-      const val = currentInputRef.current > 0 ? currentInputRef.current : 0;
+      // 入力がないまま時間切れになった設問は未回答（null）として送る。0円として集計しない
+      const val = currentInputRef.current > 0 ? currentInputRef.current : null;
       advanceWithAnswer(val);
     }, 500);
 
@@ -188,7 +238,7 @@ export const App: React.FC = () => {
   return (
     <div className="app-container">
       <Header
-        onReset={() => setView('landing')}
+        onReset={handleReset}
         showReset={view !== 'landing'}
       />
 
@@ -201,6 +251,7 @@ export const App: React.FC = () => {
             onStart={handleStart}
             totalParticipants={totalParticipants}
             isLoading={isLoading}
+            errorMessage={startError}
           />
         )}
 
@@ -261,8 +312,19 @@ export const App: React.FC = () => {
               onChange={setCurrentInputValue}
               onSubmit={handleNext}
               unit={currentQ.unit}
-              disabled={isSubmitting || isTimeUpNotice}
+              // 確認ダイアログ中は、数字・Enter・Esc をダイアログ側に渡す
+              disabled={isSubmitting || isTimeUpNotice || submitError !== null || isResetConfirmOpen}
             />
+
+            {/* 送信失敗（回答は保持したまま、手動で送り直す） */}
+            {submitError && (
+              <InlineNotice
+                message={submitError}
+                actionLabel={isSubmitting ? '送信中...' : 'もう一度送信'}
+                onAction={() => submitAnswers(answers)}
+                actionDisabled={isSubmitting}
+              />
+            )}
 
             {/* アクション補助 */}
             <div className="quiz-actions-minimal">
@@ -272,7 +334,7 @@ export const App: React.FC = () => {
                   className="btn-subtle"
                   id="btn-quiz-prev"
                   onClick={handlePrev}
-                  disabled={isSubmitting || isTimeUpNotice}
+                  disabled={isSubmitting || isTimeUpNotice || submitError !== null}
                 >
                   前へ戻る
                 </button>
@@ -281,7 +343,9 @@ export const App: React.FC = () => {
               )}
 
               <span className="enter-key-guide">
-                {isTimeUpNotice
+                {submitError
+                  ? ''
+                  : isTimeUpNotice
                   ? '時間切れ！次へ進みます'
                   : isSubmitting
                   ? '診断中...'
@@ -295,7 +359,7 @@ export const App: React.FC = () => {
         {view === 'result' && result && (
           <ResultDashboard
             result={result}
-            onRetry={() => setView('landing')}
+            onRetry={goToLanding}
           />
         )}
       </main>
@@ -346,6 +410,17 @@ export const App: React.FC = () => {
           <p className="footer-copyright">© 2026 bukka_now</p>
         </footer>
       )}
+
+      {/* クイズ中にトップへ戻るときの確認。タイマーは止めない（開閉で残り時間を延ばせないようにする） */}
+      <ConfirmDialog
+        open={isResetConfirmOpen && view === 'quiz'}
+        title="トップに戻りますか？"
+        message="ここまでの回答は保存されず、消えてしまいます。"
+        confirmLabel="トップに戻る"
+        cancelLabel="クイズを続ける"
+        onConfirm={goToLanding}
+        onCancel={() => setIsResetConfirmOpen(false)}
+      />
     </div>
   );
 };

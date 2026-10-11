@@ -15,3 +15,16 @@ binding = "DB"
 database_name = "bukka-now-db"
 database_id = "8b4c99fe-240d-4cd0-b37d-2595b8ea0234"
 migrations_dir = "./migrations"
+
+# IP ごとの回数制限（Workers Rate Limiting。period は 10 か 60 秒）
+# 回答送信: 1分に6回まで（10問を最速で答えても1回に十数秒かかる。共有 IP の複数人分を見込む）
+[[ratelimits]]
+name = "SUBMIT_RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 6, period = 60 }
+
+# 出題・統計: 1分に60回まで（通常は1回の診断で2回呼ぶ）
+[[ratelimits]]
+name = "READ_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 60, period = 60 }

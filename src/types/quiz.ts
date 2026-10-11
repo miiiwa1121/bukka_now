@@ -28,7 +28,7 @@ export type PublicQuestion = Omit<QuestionData, 'actualPrice' | 'priceNote' | 'p
 
 export interface UserAnswerItem {
   questionId: string;
-  answer: number;
+  answer: number | null; // null は未回答（時間切れで入力なし）
 }
 
 export interface SenseTypeInfo {
@@ -56,15 +56,15 @@ export interface QuestionResultItem {
   title: string;
   category: CategoryType;
   categoryLabel: string;
-  userAnswer: number;
+  userAnswer: number | null; // null は未回答
   actualPrice: number;
-  averageExpected: number;
-  minAnswer: number;     // 全ユーザー回答の最低値
-  maxAnswer: number;     // 全ユーザー回答の最高値
-  totalResponses: number; // 質問ごとの回答者数
+  averageExpected: number | null; // 集計対象（正解の 1/5〜5倍）の回答の平均。対象がなければ null
+  minAnswer: number | null;       // 集計対象の回答の最低値
+  maxAnswer: number | null;       // 集計対象の回答の最高値
+  totalResponses: number; // 質問ごとの回答者数（未回答は含まない。集計対象外の回答は含む）
   unit: string;
   score: number;
-  errorRate: number;
+  errorRate: number | null; // 未回答は null
   priceNote: string;
   priceHistory: PricePoint[]; // 年平均価格の推移（古い順、最後が正解の年）
   distribution: DistributionBin[];
@@ -74,7 +74,7 @@ export interface QuestionResultItem {
 export interface QuizSubmissionResult {
   submissionId: string;
   totalScore: number;
-  topPercentile: number; // 上位何% (例: 8.5)
+  topPercentile: number; // 上位何% (例: 8.5)。これまでの全診断の総合スコアと比べた順位
   senseType: SenseTypeInfo;
   biasScore: number;
   biasTendency: 'balanced' | 'underestimated' | 'overestimated' | 'volatile';

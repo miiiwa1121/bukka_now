@@ -1,7 +1,7 @@
 # データベース設計書（Database Design）
 
 Cloudflare D1（エッジ分散型 SQLite）のテーブル構成、インデックス、およびクエリ仕様を定義します。
-正となる定義は `migrations/` 配下の SQL（`0001_initial_schema.sql` → `0002_add_submission_source.sql` の順に適用）です。
+正となる定義は `migrations/` 配下の SQL（`0001` → `0002` → `0003` の順に適用）です。
 
 ---
 
@@ -9,7 +9,9 @@ Cloudflare D1（エッジ分散型 SQLite）のテーブル構成、インデッ
 
 - データベース名: `bukka-now-db`（バインディング名 `DB`、設定は `wrangler.toml`）
 - ユーザー登録はないため、個人を識別する情報は保存しない。
-- 保存するのは「診断1回分の結果」「設問ごとの回答」「設問別の集計」の3種類。
+- 保存するのは「診断1回分の結果」「設問ごとの回答」「設問別の集計」「総合スコアの分布」の4種類。
+- **未回答は保存しない**。時間切れで入力がなかった設問は、0点として採点するが、回答ログ・設問別集計には入れない。
+- **集計対象（`in_range`）**: 正解の 1/5〜5倍の回答だけを、世間平均・最低値・最高値に使う。範囲外の回答も回答ログには保存し、回答数と分布には含める（[6. 集計対象と集計の作り直し](#6-集計対象と集計の作り直し)）。
 - 世間平均・分布・回答者数は、D1 に入っている回答から作る。コードや migration に値を直接書いたシードは入れない。
 - 実ユーザーの回答に加えて、生成スクリプトで作った架空の回答者の回答（**生成データ**）も同じテーブルに入れ、集計に含める。`quiz_submissions.source` で区別する（[5. 生成データ](#5-生成データsynthetic)）。
 
@@ -17,6 +19,7 @@ Cloudflare D1（エッジ分散型 SQLite）のテーブル構成、インデッ
 erDiagram
     quiz_submissions ||--o{ quiz_answers : "submission_id"
     quiz_answers }o..|| item_aggregates : "question_id（論理参照）"
+    quiz_submissions }o..|| score_counts : "total_score（論理参照）"
 ```
 
 ---
@@ -48,37 +51,57 @@ erDiagram
 | `user_answer` | REAL | NOT NULL | 回答金額（円） |
 | `error_rate` | REAL | NOT NULL | 相対誤差率 `|回答 - 正解| / 正解`（小数3桁） |
 | `score` | INTEGER | NOT NULL | 設問スコア（0〜100） |
+| `in_range` | INTEGER | NOT NULL DEFAULT 1 | 集計対象か。1: 正解の 1/5〜5倍、0: 範囲外。0003 で追加 |
 | `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | 回答日時 |
 
 インデックス: `idx_answers_question_id(question_id)`、`idx_answers_submission_id(submission_id)`
 
+- 未回答の行はない（0003 で過去の 0円の行を削除し、以後は保存しない）。
+- `idx_answers_question_id` の中身は `(question_id, rowid)` の順に並ぶ。`WHERE question_id = ? ORDER BY id DESC LIMIT 500` はこのインデックスを後ろからたどり、500件で読み止める（並べ替えをしない）。
+
 ### 2.3 `item_aggregates`（設問別集計サマリー）
 
-設問ごとの平均予想を高速に返すためのテーブル。回答を受け取るたびに UPSERT で更新する。
+設問ごとの回答数・世間平均・最低値・最高値を、回答ログを読まずに返すためのテーブル。回答を受け取るたびに UPSERT で更新する。回答ログから作り直せる（`scripts/db/rebuild_aggregates.sql`）。
 
 | カラム名 | 型 | 制約 | 説明 |
 | :--- | :--- | :--- | :--- |
 | `question_id` | TEXT | PRIMARY KEY | 設問ID |
-| `total_responses` | INTEGER | DEFAULT 0 | 累計回答数 |
-| `sum_answers` | REAL | DEFAULT 0 | 回答金額の合計 |
-| `average_answer` | REAL | DEFAULT 0 | `sum_answers / total_responses` |
+| `total_responses` | INTEGER | DEFAULT 0 | 累計回答数（集計対象外も含む。未回答は含まない） |
+| `in_range_responses` | INTEGER | NOT NULL DEFAULT 0 | 集計対象の回答数。0003 で追加 |
+| `sum_answers` | REAL | DEFAULT 0 | 集計対象の回答金額の合計（0003 から。それ以前は全回答の合計） |
+| `average_answer` | REAL | DEFAULT 0 | `sum_answers / in_range_responses`（対象がなければ 0。API は `null` として扱う） |
+| `min_answer` | REAL | | 集計対象の回答の最低値（対象がなければ NULL）。0003 で追加 |
+| `max_answer` | REAL | | 集計対象の回答の最高値（対象がなければ NULL）。0003 で追加 |
 | `updated_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | 最終更新日時 |
+
+### 2.4 `score_counts`（総合スコアの分布）
+
+総合スコア（0〜100点）ごとの診断の回数。「上位何%」の算出と累計回答者数に使う。0003 で追加。最大101行なので、診断が増えても読み取り量は増えない。
+
+| カラム名 | 型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| `total_score` | INTEGER | PRIMARY KEY | 総合スコア |
+| `submissions` | INTEGER | NOT NULL DEFAULT 0 | そのスコアだった診断の回数 |
+
+累計回答者数は `SUM(submissions)`（`quiz_submissions` の件数と一致する）。
 
 ---
 
 ## 3. 主要クエリ
 
-| 用途 | 発行元 | クエリ概要 |
-| :--- | :--- | :--- |
-| 設問別平均・回答数 | `GET /api/quiz`, `POST /api/quiz/submit`, `GET /api/stats` | `SELECT question_id, average_answer, total_responses FROM item_aggregates` |
-| 累計回答者数 | 同上 | `SELECT COUNT(*) FROM quiz_submissions` |
-| 分布用の過去回答 | `POST /api/quiz/submit` | `ROW_NUMBER() OVER (PARTITION BY question_id ORDER BY id DESC)` で設問ごとに直近500件 |
-| 最低値・最高値 | `POST /api/quiz/submit` | `SELECT question_id, MIN(user_answer), MAX(user_answer) FROM quiz_answers WHERE question_id IN (...) GROUP BY question_id` |
-| セッション保存 | `POST /api/quiz/submit` | `INSERT INTO quiz_submissions (id, total_score, sense_type, bias_score)` |
-| 回答保存 | 同上（設問ごと） | `INSERT INTO quiz_answers (...)` |
-| 集計更新 | 同上（設問ごと） | `INSERT ... ON CONFLICT(question_id) DO UPDATE SET total_responses+1, sum_answers+回答, average_answer 再計算` |
+| 用途 | 発行元 | クエリ概要 | 読み取り行数の目安 |
+| :--- | :--- | :--- | :--- |
+| 設問別の集計値 | `GET /api/quiz`, `GET /api/stats` | `SELECT ... FROM item_aggregates` | 設問数（約110） |
+| 同上（出題分だけ） | `POST /api/quiz/submit` | `SELECT ... FROM item_aggregates WHERE question_id IN (...)` | 出題数 |
+| スコア分布・累計回答者数 | 3つとも | `SELECT total_score, submissions FROM score_counts` | 最大101 |
+| 分布用の過去回答 | `POST /api/quiz/submit`（設問ごとに1文） | `SELECT user_answer FROM quiz_answers WHERE question_id = ? ORDER BY id DESC LIMIT 500` | 設問あたり最大500前後 |
+| セッション保存 | `POST /api/quiz/submit` | `INSERT INTO quiz_submissions (id, total_score, sense_type, bias_score)` | — |
+| スコア分布の更新 | 同上 | `INSERT INTO score_counts ... ON CONFLICT(total_score) DO UPDATE SET submissions + 1` | — |
+| 回答保存 | 同上（回答した設問ごと） | `INSERT INTO quiz_answers (..., in_range)` | — |
+| 集計更新 | 同上（回答した設問ごと） | `INSERT INTO item_aggregates ... ON CONFLICT(question_id) DO UPDATE`。回答数 +1。集計対象なら対象数・合計・平均・最低値・最高値も更新 | — |
 
-- 保存系クエリ（1 + 設問数 × 2 文）は `db.batch()` で1トランザクションにまとめて実行する。
+- 読み取り系（集計値・スコア分布・設問ごとの過去回答）は `db.batch()` で1往復にまとめる。
+- 保存系クエリ（2 + 回答した設問数 × 2 文）は `db.batch()` で1トランザクションにまとめて実行する。
 - `IN (...)` のバインド変数は最大100個（出題数の上限）。D1 の1クエリあたりのバインド上限（100）に収まる。
 
 ---
@@ -89,12 +112,13 @@ erDiagram
 - 適用コマンド:
   - ローカル: `npm run db:migrate:local`
   - 本番: `npm run db:migrate:remote`
-- スキーマ変更は既存ファイルを書き換えず、`0003_xxx.sql` のように新しいファイルを追加する。
+- スキーマ変更は既存ファイルを書き換えず、`0004_xxx.sql` のように新しいファイルを追加する。
 
 | ファイル | 内容 |
 | :--- | :--- |
 | `0001_initial_schema.sql` | 3テーブルとインデックスの作成（データなし） |
 | `0002_add_submission_source.sql` | `quiz_submissions.source` と `idx_submissions_source` の追加。既存行は `user` になる |
+| `0003_in_range_and_score_counts.sql` | 0円（未回答）の回答ログを削除。`quiz_answers.in_range`、`item_aggregates` の `in_range_responses` / `min_answer` / `max_answer`、`score_counts` を追加し、集計を作り直す。適用後に `npm run db:refresh:*` で範囲外の印を付ける |
 
 ---
 
@@ -117,4 +141,24 @@ WHERE s.source = 'user'
 GROUP BY a.question_id;
 ```
 
-- **削除**: `scripts/synthetic-data/delete.sql` が、生成データの分を `item_aggregates` から差し引いてから回答とセッションを消す。実ユーザーの行には触れない。
+- **削除**: `scripts/synthetic-data/delete.sql` で生成データの回答とセッションを消し、続けて `scripts/db/rebuild_aggregates.sql` で集計を作り直す（`npm run synthetic:delete:*` が両方を実行する）。実ユーザーの行には触れない。
+- **書き込み量に注意**: D1 はインデックスへの書き込みも1行と数える。回答1件は「本体＋インデックス2つ」で3行になり、500人 × 100問の投入・削除はどちらも約15万行になる。無料プランの上限（1日10万行）を1回で超える（2026-10-11 に実際に超えた）。
+
+---
+
+## 6. 集計対象と集計の作り直し
+
+### 6.1 集計対象（`in_range`）
+
+- 判定は `server/aggregation.ts` の `isInRange`（正解の 0.2〜5倍、両端を含む）。API・生成データ・作り直しスクリプトで同じ関数を使う。
+- 目的: 桁の打ち間違い（×10・÷10）やいたずらの極端な値（例: 200円の品目に 99,999,999円）で、世間平均・最低値・最高値が大きく動かないようにする。範囲外の値は回答ログに残るので、分布グラフと回答数には出る。
+
+### 6.2 作り直し
+
+| ファイル / コマンド | 内容 | いつ使う |
+| :--- | :--- | :--- |
+| `scripts/db/rebuild_aggregates.sql` | `item_aggregates` と `score_counts` を回答ログ・診断ログから作り直す | 生成データの投入・削除のあと（各スクリプトが自動で実行） |
+| `npm run db:refresh:local` / `:remote` | `scripts/db/refresh.ts` で設問ごとの `in_range` 付け直し SQL を生成し、続けて上の作り直しを実行する | migration 0003 の適用直後 / 範囲（`server/aggregation.ts`）や正解価格を変えたとき |
+
+- 付け直しは、判定が変わる行だけを UPDATE する（書き込み行数を抑えるため）。2026-10-11 時点のデータでは約500行。
+- 作り直しの読み取りは全回答数ぶん（約5万行）。書き込みは設問数＋スコアの種類数ぶん（数百行）。

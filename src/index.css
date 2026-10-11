@@ -101,6 +101,14 @@ body.detailed-view-active {
   border: var(--border-thick);
   border-radius: var(--radius-pill);
   padding: 0.4rem 1rem 0.4rem 0.6rem;
+  /* <button> の既定スタイルを打ち消す */
+  font: inherit;
+  color: inherit;
+}
+
+.brand-badge:focus-visible {
+  outline: 3px solid var(--unpis-blue);
+  outline-offset: 2px;
 }
 
 
@@ -336,6 +344,12 @@ body.detailed-view-active {
 
 .btn-subtle:hover {
   background: var(--bg-panel);
+}
+
+.btn-subtle:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: var(--bg-surface);
 }
 
 
@@ -2067,8 +2081,8 @@ body.detailed-view-active {
   outline-offset: 0;
 }
 
-/* 選択中の地点の価格吹き出し（黒地・白文字） */
-.trend-tooltip {
+/* 選択中の地点・棒の吹き出し（黒地・白文字。面2・面3 共通） */
+.chart-tooltip {
   position: absolute;
   transform: translate(-50%, -14px);
   padding: 0.28rem 0.6rem;
@@ -2095,24 +2109,24 @@ body.detailed-view-active {
 }
 
 /* 吹き出しを地点の下側に出す（上部に余裕がない場合） */
-.trend-tooltip.is-below {
+.chart-tooltip.is-below {
   transform: translate(-50%, calc(100% + 14px));
 }
 
 /* 左端・右端の地点ではグラフ外にはみ出さないよう、地点を起点に内側へ寄せる */
-.trend-tooltip.align-start {
+.chart-tooltip.align-start {
   transform: translate(-6px, -14px);
 }
 
-.trend-tooltip.align-end {
+.chart-tooltip.align-end {
   transform: translate(calc(-100% + 6px), -14px);
 }
 
-.trend-tooltip.align-start.is-below {
+.chart-tooltip.align-start.is-below {
   transform: translate(-6px, calc(100% + 14px));
 }
 
-.trend-tooltip.align-end.is-below {
+.chart-tooltip.align-end.is-below {
   transform: translate(calc(-100% + 6px), calc(100% + 14px));
 }
 
@@ -2145,7 +2159,7 @@ body.detailed-view-active {
 .vplot-scroll {
   --vplot-axis-w: 2.6rem;        /* Y軸ラベル列の幅 */
   --vplot-col-min-w: 48px;       /* 1金額あたりの最小列幅（超えると横スクロール） */
-  --vplot-top-room: 1.1rem;      /* 棒の上に出す人数ラベル用の余白 */
+  --vplot-top-room: 1.9rem;      /* 最も高い棒でも吹き出しが収まる余白 */
   --vplot-x-label-h: 1.3rem;     /* X軸ラベル行の高さ */
   flex: 1;
   min-height: 0;
@@ -2218,10 +2232,26 @@ body.detailed-view-active {
   display: flex;
 }
 
+.vplot-columns {
+  cursor: pointer;
+  outline: none;
+}
+
+.vplot-columns:focus-visible {
+  outline: 2px solid var(--unpis-blue);
+  outline-offset: 2px;
+}
+
 .vplot-column {
   position: relative;
   flex: 1 1 0;
   min-width: 0;
+  border-radius: 4px;
+}
+
+/* 選択中の棒の列をうっすら塗る */
+.vplot-column.is-selected {
+  background: rgba(25, 25, 25, 0.07);
 }
 
 .vplot-bar {
@@ -2229,7 +2259,7 @@ body.detailed-view-active {
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: min(28px, 60%);
+  width: min(10px, 50%);
   box-sizing: border-box;
   background: #d4cfc5;
   border: 1.5px solid var(--ink-black);
@@ -2242,17 +2272,6 @@ body.detailed-view-active {
 .vplot-bar.is-zero {
   height: 5px;
   border-radius: 2px 2px 0 0;
-}
-
-.vplot-count {
-  position: absolute;
-  left: 50%;
-  transform: translate(-50%, -0.2rem);
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--ink-subtle);
-  white-space: nowrap;
 }
 
 /* X軸の金額ラベル */
@@ -2279,3 +2298,88 @@ body.detailed-view-active {
     font-size: 0.64rem;
   }
 }
+
+/* 画面内のお知らせ（エラー・案内。alert() の代わり） */
+.inline-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.75rem;
+  width: 100%;
+  max-width: 520px;
+  margin: 1.25rem auto 0;
+  padding: 0.85rem 1rem;
+  background: var(--bg-panel);
+  border: var(--border-thick);
+  border-radius: var(--radius-md);
+  color: var(--ink-black);
+  text-align: left;
+}
+
+.inline-notice-dot {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--unpis-red);
+  border: 1.5px solid var(--ink-black);
+}
+
+.inline-notice-text {
+  flex: 1 1 220px;
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.inline-notice-action {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 0.55rem 1.2rem;
+  font-size: 0.9rem;
+}
+
+/* 確認ダイアログ（<dialog>） */
+.confirm-dialog {
+  /* 全体リセット（margin: 0）で <dialog> の中央寄せが消えるため、明示する */
+  margin: auto;
+  width: min(420px, calc(100vw - 32px));
+  padding: 1.5rem 1.4rem 1.25rem;
+  background: var(--bg-surface);
+  color: var(--ink-black);
+  border: var(--border-thick);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-sans);
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(25, 25, 25, 0.45);
+}
+
+.confirm-dialog-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.confirm-dialog-text {
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.7;
+  color: var(--ink-subtle);
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.confirm-dialog-confirm {
+  padding: 0.55rem 1.2rem;
+  font-size: 0.88rem;
+}
+

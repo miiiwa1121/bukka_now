@@ -4,6 +4,7 @@
 
 import React, { useRef, useState } from 'react';
 import type { QuestionResultItem } from '../types/quiz';
+import { formatAmount } from '../utils/format';
 import { PriceNoteColumn } from './PriceNoteColumn';
 
 interface PriceTrendChartProps {
@@ -148,7 +149,7 @@ export const PriceTrendChart: React.FC<PriceTrendChartProps> = ({ item, question
       <div className="unified-metrics-grid">
         <div className="unified-stat-cell you">
           <span className="unified-stat-label">あなたの回答</span>
-          <span className="unified-stat-val">{item.userAnswer.toLocaleString()}{item.unit}</span>
+          <span className="unified-stat-val">{formatAmount(item.userAnswer, item.unit, '未回答')}</span>
         </div>
 
         <div className="unified-stat-cell actual">
@@ -158,7 +159,7 @@ export const PriceTrendChart: React.FC<PriceTrendChartProps> = ({ item, question
 
         <div className="unified-stat-cell avg">
           <span className="unified-stat-label">全体平均</span>
-          <span className="unified-stat-val">{item.averageExpected.toLocaleString()}{item.unit}</span>
+          <span className="unified-stat-val">{formatAmount(item.averageExpected, item.unit)}</span>
         </div>
 
         <div className="unified-stat-cell past">
@@ -232,7 +233,7 @@ export const PriceTrendChart: React.FC<PriceTrendChartProps> = ({ item, question
 
                   {/* 選択中の年の価格吹き出し（上部に余裕がない場合は下側、左右端では内側に寄せる） */}
                   <span
-                    className={`trend-tooltip ${selectedY > 70 ? 'is-below' : ''} ${selectedX < 15 ? 'align-start' : ''} ${selectedX > 85 ? 'align-end' : ''}`}
+                    className={`chart-tooltip ${selectedY > 70 ? 'is-below' : ''} ${selectedX < 15 ? 'align-start' : ''} ${selectedX > 85 ? 'align-end' : ''}`}
                     style={{ left: `${selectedX}%`, bottom: `${selectedY}%` }}
                   >
                     {pointLabel(selectedIndex)}

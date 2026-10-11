@@ -2,9 +2,10 @@
 // 使い方: npm run synthetic:generate -- [--count 500] [--seed 12345] [--out scripts/synthetic-data/out/insert.sql]
 // 生成した行は quiz_submissions.source = 'synthetic'、ID は 'syn_' で始まる（実ユーザーは 'user' / 'sub_'）
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { parseArgs } from 'node:util';
+import { isInRange } from '../../server/aggregation';
 import { calculateQuizResult } from '../../server/scoring';
 import { QUIZ_MASTER } from '../../src/data/quizMaster';
 import type { QuestionData, UserAnswerItem } from '../../src/types/quiz';
@@ -160,7 +161,9 @@ for (let i = 0; i < count; i++) {
 
   submissions.push(`('${submissionId}', ${result.totalScore}, '${result.senseType.code}', ${result.biasScore}, 'synthetic')`);
   for (const item of result.questionResults) {
-    answers.push(`('${submissionId}', '${item.questionId}', ${item.userAnswer}, ${item.errorRate}, ${item.score})`);
+    if (item.userAnswer === null) continue;
+    const inRange = isInRange(item.userAnswer, item.actualPrice) ? 1 : 0;
+    answers.push(`('${submissionId}', '${item.questionId}', ${item.userAnswer}, ${item.errorRate}, ${item.score}, ${inRange})`);
   }
 }
 
@@ -178,18 +181,9 @@ const sql = [
   `-- 生成データ投入 SQL（scripts/synthetic-data/generate.ts が出力。コミットしない）`,
   `-- batch: ${batchId} / seed: ${seed} / 回答者: ${count}人 × ${QUIZ_MASTER.length}問`,
   ...chunkedInserts('INSERT INTO quiz_submissions (id, total_score, sense_type, bias_score, source) VALUES', submissions),
-  ...chunkedInserts('INSERT INTO quiz_answers (submission_id, question_id, user_answer, error_rate, score) VALUES', answers),
-  // 設問別集計に今回のバッチ分を加算（API の回答保存時と同じ UPSERT）
-  `INSERT INTO item_aggregates (question_id, total_responses, sum_answers, average_answer)
-SELECT a.question_id, COUNT(*), SUM(a.user_answer), AVG(a.user_answer)
-FROM quiz_answers a
-WHERE a.submission_id LIKE '${batchId}\\_%' ESCAPE '\\'
-GROUP BY a.question_id
-ON CONFLICT(question_id) DO UPDATE SET
-  total_responses = total_responses + excluded.total_responses,
-  sum_answers = sum_answers + excluded.sum_answers,
-  average_answer = (sum_answers + excluded.sum_answers) / (total_responses + excluded.total_responses),
-  updated_at = CURRENT_TIMESTAMP;`,
+  ...chunkedInserts('INSERT INTO quiz_answers (submission_id, question_id, user_answer, error_rate, score, in_range) VALUES', answers),
+  // 設問別集計とスコア分布を回答ログから作り直す
+  readFileSync('scripts/db/rebuild_aggregates.sql', 'utf8'),
 ].join('\n\n');
 
 mkdirSync(dirname(args.out!), { recursive: true });

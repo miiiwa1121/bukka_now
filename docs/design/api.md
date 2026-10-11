@@ -13,8 +13,16 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
 | `POST` | `/api/quiz/submit` | 回答を送信し、採点結果を取得（D1 に保存） | 不要 |
 | `GET` | `/api/stats` | 全100品目の世間平均と回答数を取得（フロント未使用） | 不要 |
 
-- すべてのルートに `hono/cors` を適用している（全オリジン許可）。
-- D1 バインディングがない環境（`npm run dev`）では、集計値を空として返す。
+- **CORS は許可しない**。画面と API は同じオリジンなので不要。他サイトのブラウザからは呼べない（プリフライトに許可ヘッダーを返さない）。
+- **IP ごとの回数制限**（Workers Rate Limiting。設定は `wrangler.toml` の `ratelimits`）。超えると `429 { "error": "..." }`。
+
+  | 対象 | バインディング | 上限 |
+  | :--- | :--- | :--- |
+  | `POST /api/quiz/submit` | `SUBMIT_RATE_LIMITER` | 60秒に6回 |
+  | `GET /api/quiz`、`GET /api/stats` | `READ_RATE_LIMITER` | 60秒に60回 |
+
+  キーは `cf-connecting-ip`。IPv4 はアドレスそのもの、IPv6 は上位64ビット（`2001:db8:abcd:12::/64` の形）で数える（IPv6 は1契約に /64 以上がまとめて割り当てられ、アドレスを付け替えて回避できるため。`rateLimitKey()`）。回数は Cloudflare の拠点ごとに数えるため、厳密な上限ではない。回数制限そのものが失敗したときは通す（サービスを止めない）。
+- D1 バインディングや回数制限のバインディングがない環境（`npm run dev`）では、集計値を空として返し、回数制限もしない。
 
 ---
 
@@ -53,8 +61,8 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
 
 | フィールド | 説明 |
 | :--- | :--- |
-| `questions[].totalResponses` | その設問の累計回答数 |
-| `totalParticipants` | `quiz_submissions` の件数（累計回答者数） |
+| `questions[].totalResponses` | その設問の累計回答数（`item_aggregates.total_responses`） |
+| `totalParticipants` | 累計回答者数（`score_counts.submissions` の合計。`quiz_submissions` の件数と同じ） |
 
 ---
 
@@ -68,10 +76,12 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
 {
   "answers": [
     { "questionId": "s1001", "answer": 4500 },
-    { "questionId": "s7401", "answer": 85 }
+    { "questionId": "s7401", "answer": null }
   ]
 }
 ```
+
+- `answer: null` は未回答（時間切れで入力なし）。0点として採点し、回答ログ・設問別集計には保存しない。
 
 #### 入力検証（違反時は `400 { "error": "<理由>" }`）
 
@@ -83,7 +93,7 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
 | 要素がオブジェクトでない | `Invalid answer item` |
 | `questionId` がマスターに存在しない | `Unknown questionId` |
 | 同じ `questionId` が重複している | `Duplicate questionId` |
-| `answer` が 0〜99,999,999 の整数でない | `answer must be an integer between 0 and 99999999` |
+| `answer` が `null` でも 1〜99,999,999 の整数でもない（0円は不可） | `answer must be null or an integer between 1 and 99999999` |
 
 #### レスポンス（200 OK）
 
@@ -139,18 +149,21 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
 | フィールド | 説明 |
 | :--- | :--- |
 | `totalScore` | 総合スコア（0〜100） |
-| `topPercentile` | 上位何%（0.5〜99.5、小数1桁） |
+| `topPercentile` | 上位何%（0.1〜100、小数1桁）。これまでの全診断の総合スコア（`score_counts`）と比べた順位。算出方法は [quiz_data.md](quiz_data.md) |
 | `senseType.code` | `master` / `timeslip` / `panic` / `rough` |
-| `biasScore` | 平均バイアス（負なら安く、正なら高く見積もる傾向） |
+| `biasScore` | 平均バイアス（負なら安く、正なら高く見積もる傾向）。回答した設問だけで平均する |
 | `biasTendency` | `balanced`（master）/ `underestimated`（timeslip）/ `overestimated`（panic）/ `volatile`（rough） |
 | `questionResults[].distribution` | 10分割ヒストグラムのビン。算出方法は [quiz_data.md](quiz_data.md) を参照 |
-| `questionResults[].averageExpected` | 今回の回答を含めた全回答の平均（四捨五入）。既存回答がなければ自分の回答と同じ値 |
-| `questionResults[].totalResponses` | 今回の回答を含めた累計回答数（`item_aggregates` ＋1） |
-| `questionResults[].minAnswer` / `maxAnswer` | 今回の回答を含めた全回答の最低値・最高値 |
+| `questionResults[].userAnswer` | 回答金額。未回答は `null` |
+| `questionResults[].score` / `errorRate` | 設問スコアと誤差率。未回答は 0点、`errorRate` は `null` |
+| `questionResults[].averageExpected` | 集計対象（正解の 1/5〜5倍）の回答の平均（四捨五入）。今回の回答も対象なら含める。対象がなければ `null` |
+| `questionResults[].totalResponses` | 今回の回答を含めた累計回答数（`item_aggregates.total_responses` ＋ 回答していれば1）。集計対象外の回答も数える |
+| `questionResults[].minAnswer` / `maxAnswer` | 集計対象の回答の最低値・最高値（今回の回答も対象なら含める）。対象がなければ `null` |
 | `questionResults[].priceHistory` | 年平均価格の推移（古い順、最後が2025年）。面3の折れ線に使う |
-| `questionResults[].rawAnswers` | 分布の母集団（その設問の直近500件＋今回の回答）。面1のヒストグラムと面2の1単位プロットに使う |
+| `questionResults[].rawAnswers` | 分布の母集団（その設問の直近500件＋今回の回答。集計対象外の回答も含む）。面1のヒストグラムと面2の1単位プロットに使う |
 
 #### エラー
+- `429 { "error": "Too many submissions. Please wait a moment." }`: 回数制限を超えた場合。入力検証より前に判定する。画面は「1分ほど待ってから」と案内する。
 - `500 { "error": "Failed to process quiz submission" }`: 想定外の例外が起きた場合。
 - D1 への保存は `db.batch()` による1トランザクションで、レスポンス返却後に非同期で行う。保存に失敗してもログ出力のみで、レスポンスには影響しない。
 
@@ -177,4 +190,5 @@ Hono (TypeScript) で提供する REST API のエンドポイント、リクエ�
 }
 ```
 
-- `averageExpected`: 回答がない設問は `null`。
+- `averageExpected`: 集計対象（正解の 1/5〜5倍）の回答の平均。対象がない設問は `null`。
+- `totalResponses`: 集計対象外も含めた回答数。

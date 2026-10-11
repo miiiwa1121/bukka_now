@@ -1,6 +1,7 @@
 // src/components/LandingView.tsx: シンプル is best なトップビュー
 
 import React from 'react';
+import { InlineNotice } from './InlineNotice';
 
 interface LandingViewProps {
   questionCount: number;
@@ -8,6 +9,7 @@ interface LandingViewProps {
   onStart: () => void;
   totalParticipants?: number;
   isLoading?: boolean;
+  errorMessage?: string | null; // 出題の取得に失敗したときの案内
 }
 
 const COUNT_OPTIONS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -18,6 +20,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
   onStart,
   totalParticipants = 0,
   isLoading = false,
+  errorMessage = null,
 }) => {
   return (
     <div className="landing-minimal animate-fade-in" id="landing-hero-view">
@@ -69,6 +72,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
           {isLoading ? '準備中...' : `診断を開始する（全${questionCount}問）`}
         </button>
       </div>
+
+      {errorMessage && <InlineNotice message={errorMessage} />}
     </div>
   );
 };

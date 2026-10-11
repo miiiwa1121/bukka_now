@@ -19,7 +19,8 @@ npm run synthetic:delete:local
 npm run synthetic:delete:remote    # 本番
 ```
 
-- 事前に `0002_add_submission_source.sql` までのマイグレーションを適用しておくこと（`source` 列が必要）。
+- 事前に `0003_in_range_and_score_counts.sql` までのマイグレーションを適用しておくこと（`source`・`in_range` 列と `score_counts` が必要）。
+- **書き込み量に注意**: 500人 × 100問の投入・削除は、どちらも約15万行の書き込みになる（回答1件 = 本体＋インデックス2つ）。D1 無料プランの上限は1日10万行。
 - 投入は追記。2回投入すると2倍になる。作り直すときは、先に delete を実行してから投入する。
 - 同じ `--seed` なら同じ回答値が生成される（ID の時刻部分だけ変わる）。
 
@@ -27,8 +28,8 @@ npm run synthetic:delete:remote    # 本番
 
 | ファイル | 役割 |
 | :--- | :--- |
-| `generate.ts` | 回答を生成して採点し、INSERT 文（500行ごと）と `item_aggregates` の加算 UPSERT を書き出す |
-| `delete.sql` | 生成データの分を `item_aggregates` から差し引き、`quiz_answers` → `quiz_submissions` の順に削除する |
+| `generate.ts` | 回答を生成して採点し、INSERT 文（500行ごと。集計対象の印 `in_range` 付き）と、集計の作り直し（`scripts/db/rebuild_aggregates.sql`）を書き出す |
+| `delete.sql` | `quiz_answers` → `quiz_submissions` の順に生成データを削除する。`npm run synthetic:delete:*` は続けて `scripts/db/rebuild_aggregates.sql` を実行する |
 | `out/insert.sql` | 生成結果（git 管理外） |
 
 ## 回答の作り方

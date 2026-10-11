@@ -57,6 +57,8 @@ export const NumberKeypad: React.FC<NumberKeypadProps> = ({
         e.preventDefault();
         handleClear();
       } else if (e.key === 'Enter') {
+        // テンキー以外のボタン・リンク（ロゴ、前へ戻る、再送信など）にフォーカスがあるときは、そちらを押させる
+        if (e.target instanceof Element && e.target.closest('button, a') && !e.target.closest('#numpad-container')) return;
         e.preventDefault();
         if (value > 0) {
           onSubmit();

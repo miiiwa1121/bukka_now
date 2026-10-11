@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import type { QuizSubmissionResult } from '../types/quiz';
+import { formatAmount } from '../utils/format';
 import { DetailedPlotChart } from './DetailedPlotChart';
 import { PriceTrendChart } from './PriceTrendChart';
 import { DistributionBarChart } from './DistributionBarChart';
@@ -330,6 +331,10 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
+      // 横スクロールできるグラフ（面2）の上では、グラフのスクロールを優先してボードを切り替えない
+      const scroller = e.target instanceof Element ? e.target.closest('.vplot-scroll') : null;
+      if (scroller && scroller.scrollWidth > scroller.clientWidth) return;
+
       // 水平方向の二本指スワイプ判定（垂直成分より大きく一定量以上のdeltaX）
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY) * 1.2 && Math.abs(e.deltaX) > 20) {
         const now = Date.now();
@@ -490,7 +495,7 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                           <div className="unified-metrics-grid grid-five">
                             <div className="unified-stat-cell you">
                               <span className="unified-stat-label">あなたの回答</span>
-                              <span className="unified-stat-val">{item.userAnswer.toLocaleString()}{item.unit}</span>
+                              <span className="unified-stat-val">{formatAmount(item.userAnswer, item.unit, '未回答')}</span>
                             </div>
 
                             <div className="unified-stat-cell actual">
@@ -500,17 +505,17 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
 
                             <div className="unified-stat-cell avg">
                               <span className="unified-stat-label">全体平均</span>
-                              <span className="unified-stat-val">{item.averageExpected.toLocaleString()}{item.unit}</span>
+                              <span className="unified-stat-val">{formatAmount(item.averageExpected, item.unit)}</span>
                             </div>
 
                             <div className="unified-stat-cell min">
                               <span className="unified-stat-label">最低値（MIN）</span>
-                              <span className="unified-stat-val">{item.minAnswer.toLocaleString()}{item.unit}</span>
+                              <span className="unified-stat-val">{formatAmount(item.minAnswer, item.unit)}</span>
                             </div>
 
                             <div className="unified-stat-cell max">
                               <span className="unified-stat-label">最高値（MAX）</span>
-                              <span className="unified-stat-val">{item.maxAnswer.toLocaleString()}{item.unit}</span>
+                              <span className="unified-stat-val">{formatAmount(item.maxAnswer, item.unit)}</span>
                             </div>
                           </div>
 
