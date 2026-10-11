@@ -50,6 +50,10 @@
   padding: 0;
 }
 
+html, body {
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-page);
@@ -62,12 +66,12 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   /* 自分がカードの場所へ歩いて移動したように感じる背景ドット空間移動トランジション */
-  transition: background-position 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: background-position 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* 詳細画面表示時：空間全体（背景ドット）が左に流れ、自分が右側のボードの前に移動した臨場感を演出 */
 body.detailed-view-active {
-  background-position: -360px 0;
+  background-position: -480px 0;
 }
 
 /* App Container */
@@ -1370,50 +1374,59 @@ body.detailed-view-active {
    ホワイトボード横スライド機構 ＆ 1単位プロット棒グラフ
    ========================================================================== */
 
-/* ホワイトボード・ステージ */
+/* ホワイトボード・ステージ：画面全幅（100vw）に展開し、詳細カードが画面右端から出現するようにする */
 .whiteboard-stage {
-  width: 100%;
+  width: 100vw;
   position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  overflow: hidden;
 }
 
 /* ホワイトボードスライドラック（横スライド機構） */
 .whiteboard-track-viewport {
-  width: 100%;
+  width: 100vw;
   overflow: hidden;
   position: relative;
 }
 
 .whiteboard-sliding-rail {
   display: flex;
-  width: 200%;
-  /* 自分がカードの場所へ歩いていくような自然なドリーカメラ風のゆったりとした滑らかな移動 */
-  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  width: 200vw;
+  /* 画面右端から詳細カードが滑り込んでくる大迫力のカメラパン演出 */
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
 
 .whiteboard-sliding-rail.is-detailed-active {
-  transform: translateX(-50%);
+  transform: translateX(-100vw);
 }
 
 .whiteboard-panel {
-  width: 50%;
-  min-width: 0;
+  width: 100vw;
+  min-width: 100vw;
   box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  padding: 0 1rem;
 }
 
-/* 面1 & 面2 のパディング（固定ボタンになったため全幅クリーン配置） */
+/* 面1 & 面2 のパディング */
 .panel-summary {
-  padding: 0 0.25rem;
+  padding: 0 1rem;
 }
 
 .panel-detailed {
-  padding: 0 0.25rem;
+  padding: 0 1rem;
 }
 
-/* カードを包括するラッパー */
+/* カードを包括するラッパー：常に画面中央の最大760px幅で美しく維持 */
 .whiteboard-card-wrapper {
-  position: relative;
   width: 100%;
+  max-width: 760px;
+  position: relative;
 }
 
 /* ==========================================================================
