@@ -6,8 +6,8 @@
 
 - ファイル名は `yyyymmdd.md` 形式
 - 同日中は同一ファイルに追記する
-- 決定事項そのものは [requirements/decisions.md](file:///Users/miiiwa/Desktop/dev/bukka_now/docs/requirements/decisions.md) に記録し、devlog は「何が起きたか・どう考えたか」を残す
+- 決定事項そのものは [requirements/decisions.md](../requirements/decisions.md) に記録し、devlog は「何が起きたか・どう考えたか」を残す
 
 ## ログ一覧
 
-- [20261011.md](file:///Users/miiiwa/Desktop/dev/bukka_now/docs/devlog/20261011.md): プロジェクト初期設定・要件定義の開始
+- [20261011.md](20261011.md): プロジェクト立ち上げ〜要件定義・実装・本番デプロイ・結果画面3面スライド化・docs 整理

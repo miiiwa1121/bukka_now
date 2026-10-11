@@ -1,6 +1,6 @@
 # アーキテクチャ設計書（Architecture Design）
 
-`bukka_now` のシステム構成、ディレクトリ構造、およびクライアント/サーバー間の通信設計を定義します。
+`bukka_now` のシステム構成、ディレクトリ構造、およびクライアントとサーバー間の通信設計を定義します。
 
 ---
 
@@ -9,88 +9,112 @@
 ```mermaid
 graph TB
     subgraph Client ["クライアント（ブラウザ）"]
-        SPA["React SPA (Vite + TypeScript)"]
-        UI_Components["Vanilla CSS リッチUI / アニメーション"]
-        Radar_Chart["SVG レーダーチャート / 比較ゲージ"]
+        SPA["React SPA (Vite + TypeScript / Vanilla CSS)"]
     end
 
-    subgraph Edge ["Cloudflare エッジ環境"]
-        Pages["Cloudflare Pages (静的アセット配信)"]
-        Worker["Cloudflare Workers (Hono API ルーター)"]
-        D1[("Cloudflare D1 (エッジ分散 SQLite)")]
+    subgraph Edge ["Cloudflare Pages プロジェクト: bukka-now"]
+        Static["静的アセット配信 (dist/)"]
+        Fn["Pages Functions: functions/api/[[route]].ts → Hono (server/app.ts)"]
+        D1[("D1: bukka-now-db")]
     end
 
-    SPA <--> |静的ファイル取得| Pages
-    SPA <--> |JSON API リクエスト| Worker
-    Worker <--> |SQL クエリ / 統計集計| D1
+    SPA <--> |HTML/JS/CSS| Static
+    SPA <--> |/api/* JSON| Fn
+    Fn <--> |binding: DB| D1
 ```
 
-- **Cloudflare Pages**: フロントエンド（React + Vite）の静的ビルド成果物を世界中のエッジロケーションから超高速配信。
-- **Hono on Cloudflare Workers / Pages Functions**: 超軽量・型安全な REST API サーバー。設問配信、スコアリング判定、回答データの非同期集計処理を担当。
-- **Cloudflare D1**: サーバーレス分散 SQLite データベース。ユーザーの匿名回答ログを蓄積し、全問の「世間の平均予想」をリアルタイムに計算・提供。
+- **Cloudflare Pages**: Vite のビルド成果物（`dist/`）を配信する。
+- **Pages Functions + Hono**: `/api/*` へのリクエストを `functions/api/[[route]].ts` が受け、`server/app.ts` の Hono アプリに渡す。出題、採点、集計、D1 への保存を担当する。
+- **Cloudflare D1**: 匿名の回答ログと設問別の集計を保存する。スキーマは [database.md](database.md) を参照。
+- **デプロイ方式**: Git 連携ではなく Direct Upload（`npm run deploy`）。
 
 ---
 
 ## 2. ディレクトリ構成
 
-単一リポジトリ（Monorepo風または統合フルスタック構成）として保守しやすく整理します。
-
 ```
 bukka_now/
-├── .agents/                    # エージェント用ルール・スキル定義
-├── docs/                       # プロジェクト公式ドキュメント
-│   ├── README.md               # ドキュメント目次
-│   ├── requirements/           # 要件定義
-│   ├── design/                 # 詳細設計書
-│   └── devlog/                 # 開発日報
-├── migrations/                 # Cloudflare D1 SQLマイグレーションファイル
-│   └── 0001_initial_schema.sql # テーブル作成および初期マスター投入
-├── functions/                  # Cloudflare Pages Functions (API エントリポイント)
-│   └── api/
-│       └── [[route]].ts        # Hono ルーター
-├── src/                        # フロントエンド (React)
-│   ├── components/             # UIコンポーネント (クイズカード, レーダーチャート等)
+├── AGENTS.md                   # AI エージェント用プロジェクト指示
+├── docs/                       # ドキュメント（目次: docs/README.md）
+├── functions/
+│   └── api/[[route]].ts        # Pages Functions エントリ（hono/cloudflare-pages の handle）
+├── server/                     # API 実装（Hono）
+│   ├── app.ts                  # ルーティング・D1 アクセス・集計
+│   ├── scoring.ts              # 採点・パーセンタイル・分布生成・タイプ判定
+│   └── types.ts                # Env（D1 バインディング）型
+├── migrations/
+│   └── 0001_initial_schema.sql # D1 スキーマ（シードデータなし）
+├── src/                        # フロントエンド（React）
+│   ├── App.tsx                 # 画面遷移（landing / quiz / result）・10秒タイマー・API 呼び出し
+│   ├── main.tsx
+│   ├── index.css / App.css     # Vanilla CSS（unpis 風デザインシステム）
+│   ├── components/
 │   │   ├── Header.tsx
-│   │   ├── QuizCardChoice.tsx  # 4択コンポーネント
-│   │   ├── QuizCardSlider.tsx  # ニアピンスライダー
-│   │   ├── QuizCardCompare.tsx # 過去比較コンポーネント
-│   │   ├── ResultDashboard.tsx # 診断結果・スコアダッシュボード
-│   │   ├── RadarChart.tsx      # SVGレーダーチャート
-│   │   └── ComparisonBar.tsx   # あなた vs 世間 vs 相場 比較バー
-│   ├── data/                   # クイズマスターデータ定義 (TypeScript)
-│   ├── hooks/                  # カスタムフック (クイズ状態管理, API通信)
-│   ├── styles/                 # Vanilla CSS
-│   │   ├── index.css           # リセット・変数・カラーパレット
-│   │   ├── components.css      # コンポーネント用スタイル
-│   │   └── animations.css      # アニメーション定義
-│   ├── types/                  # 共通型定義 (Quiz, Answer, Result)
-│   ├── App.tsx                 # メインアプリ画面
-│   └── main.tsx                # エントリポイント
-├── server/                     # Hono バックエンド実装
-│   ├── index.ts                # Hono アプリケーション定義
-│   ├── routes/                 # 各APIルート (quiz, stats)
-│   └── services/               # スコアリングロジック・D1操作
-├── public/                     # 静的アセット (ファビコン, OGP画像)
-├── wrangler.toml               # Cloudflare 設定ファイル (D1 バインディング等)
-├── vite.config.ts              # Vite 設定
-├── package.json
-└── tsconfig.json
+│   │   ├── LandingView.tsx           # トップ（累計回答者数・設問数選択）
+│   │   ├── NumberKeypad.tsx          # テンキー＋物理キーボード入力
+│   │   ├── ResultDashboard.tsx       # 結果画面（固定スコアカード＋3面スライド・ジェスチャー）
+│   │   ├── DistributionBarChart.tsx  # 面1: 10分割ヒストグラム
+│   │   ├── DetailedPlotChart.tsx     # 面2: 1単位プロット
+│   │   ├── PriceTrendChart.tsx       # 面3: 物価推移折れ線（SVG）
+│   │   └── PriceNoteColumn.tsx       # 3面共通の「コラム」（priceNote）
+│   ├── data/quizMaster.ts      # 100問マスター（正解価格・解説含む）＋ SENSE_TYPES
+│   └── types/quiz.ts           # フロント・サーバー共通型
+├── public/                     # favicon 等
+├── wrangler.toml               # Pages 設定・D1 バインディング
+├── vite.config.ts              # React + @hono/vite-dev-server（dev 時に /api を Hono へ）
+└── package.json
 ```
+
+`src/data/` と `src/types/` はサーバーとフロントで共有している。サーバーは `src/data/quizMaster.ts` を import して採点する。
 
 ---
 
-## 3. 通信・データフロー設計
+## 3. 実行環境ごとの API / DB の動き
 
-### 3.1 クイズ開始時
-1. クライアントが `GET /api/quiz` を呼び出す。
-2. APIは、全7問の出題データ（設問文、選択肢、カテゴリ等）と、現在の「世間の平均予想データ」を返却。正解価格はカンニング防止のためこの段階ではクライアントに送信しない。
+| コマンド | フロント | API | D1 |
+| :--- | :--- | :--- | :--- |
+| `npm run dev` | Vite dev server（:5173） | `@hono/vite-dev-server` が `server/app.ts` を直接実行 | **バインディングなし**（`c.env.DB` は undefined）。保存はせず、集計値は空として動く |
+| `npm run preview` | `dist/` | `wrangler pages dev` が Functions を実行 | ローカル D1（`.wrangler/state`）。`wrangler.toml` のバインディングを使う。事前に `npm run db:migrate:local` が必要 |
+| 本番 | Cloudflare Pages | Pages Functions | 本番 D1 `bukka-now-db` |
 
-### 3.2 回答完了・採点送信時
-1. クライアントが全7問のユーザー回答配列を `POST /api/quiz/submit` へ送信。
-2. サーバー側（Hono）で：
-   - 物価マスターデータの正解価格と照合し、各問の誤差率とスコア（0〜100点）を計算。
-   - 回答傾向から「物価感覚タイプ（4タイプ）」を判定。
-   - カテゴリ別スコアを計算。
-   - 回答ログを Cloudflare D1 に非同期 INSERT し、各設問の平均予想値を更新。
-3. サーバーから採点結果（総合スコア、タイプ、レーダーチャート値、各問の「あなたの回答」「世間平均」「実際の公的価格」「解説」）を返却。
-4. クライアントはアニメーション演出を伴って結果ダッシュボードを表示。
+API は `c.env.DB` がない場合でも落ちないように作ってある。その場合は集計値が空（回答者0人。結果画面の世間平均は自分の回答のみから計算）として動く。
+
+> `wrangler pages dev` に `--d1=DB=...` フラグを付けると、マイグレーション済みとは別の空のローカル DB が使われてしまう。そのため `npm run preview` ではこのフラグを付けない。
+
+---
+
+## 4. 通信・データフロー
+
+### 4.1 起動時・トップ画面
+1. `App.tsx` がマウント時に `GET /api/quiz?count=10` を呼び、`totalParticipants`（累計回答者数）だけを使う。
+
+### 4.2 クイズ開始時
+1. `GET /api/quiz?count=N` を呼ぶ。
+2. サーバーは `QUIZ_MASTER` をシャッフルして N 問を抽出する。返すのは表示に必要な項目（ID、カテゴリ、設問文、単位）と `totalResponses`（設問別回答者数）だけ。正解（`actualPrice`）、解説（`priceNote`）、正解のヒントになる値（`pastPrice`、世間平均）は返さない。
+
+### 4.3 回答完了・採点時
+1. クライアントが `POST /api/quiz/submit` に `{ answers: [{ questionId, answer }] }` を送る。
+2. サーバー側の処理:
+   - 入力を検証する（不正なら 400）。
+   - D1 の `item_aggregates` から設問別の平均と回答数を取得する。
+   - D1 の `quiz_answers` から、対象設問の過去回答（設問ごとに直近500件）と、設問別の最低値・最高値を取得する。
+   - `calculateQuizResult()` で採点、パーセンタイル、タイプ判定、分布生成を行う。世間平均・回答者数・最低値・最高値には今回の回答も含める。
+   - D1 に保存する（`quiz_submissions` を INSERT、設問ごとに `quiz_answers` を INSERT、`item_aggregates` を UPSERT）。保存は `db.batch()` で1トランザクションにまとめ、`executionCtx.waitUntil` で非同期に行う（レスポンスを待たせない）。
+3. 採点結果を返し、クライアントが結果画面を描画する。
+
+API の詳細は [api.md](api.md) を参照。
+
+---
+
+## 5. 既知の課題
+
+現在、未解決の課題はない。
+
+### 解決済み（2026-10-11）
+
+| # | 課題 | 対応 |
+| :--- | :--- | :--- |
+| 1 | `PriceTrendChart.tsx` が `QUIZ_MASTER` を import しており、正解価格がクライアントバンドルに入っていた | import を削除し、採点 API が返す `pastPrice` / `pastPriceYear` だけを使うようにした。`pastPrice` / `pastPriceYear` は型上も必須にした |
+| 2 | 出題 API が、回答0件の設問の `averageExpected` として正解価格を返していた。`pastPrice` も返していた | 出題 API から `averageExpected` と `pastPrice` / `pastPriceYear` を削除した（フロントでは未使用だった）。`GET /api/stats` からも正解価格と乖離率を削除した（乖離率から正解を逆算できるため） |
+| 3 | 過去回答の取得が全設問合計で `LIMIT 500` だった | `ROW_NUMBER() OVER (PARTITION BY question_id)` で設問ごとに直近500件を取るようにした。回答者数は `item_aggregates`、最低値・最高値は SQL の `MIN` / `MAX` から全件ベースで出す |
+| 4 | `POST /api/quiz/submit` の入力検証が不十分だった | 件数1〜100、存在する設問ID、重複なし、回答は 0〜99,999,999 の整数、を検証し、違反時は 400 を返す |

@@ -5,6 +5,7 @@ import type { QuizSubmissionResult } from '../types/quiz';
 import { DetailedPlotChart } from './DetailedPlotChart';
 import { PriceTrendChart } from './PriceTrendChart';
 import { DistributionBarChart } from './DistributionBarChart';
+import { PriceNoteColumn } from './PriceNoteColumn';
 
 interface ResultDashboardProps {
   result: QuizSubmissionResult;
@@ -180,9 +181,19 @@ function getIntenseComment(score: number): IntenseComment {
   };
 }
 
+type BoardKey = 'summary' | 'detailed' | 'trend';
+
+// スライドボードの並び順と、ナビボタンに表示する名前
+const BOARD_ORDER: BoardKey[] = ['summary', 'detailed', 'trend'];
+const BOARD_LABELS: Record<BoardKey, string> = {
+  summary: 'サマリー',
+  detailed: '詳細データ',
+  trend: '物価推移',
+};
+
 export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetry }) => {
   const [copied, setCopied] = useState(false);
-  const [activeBoard, setActiveBoard] = useState<'summary' | 'detailed' | 'trend'>('summary');
+  const [activeBoard, setActiveBoard] = useState<BoardKey>('summary');
   const intenseComment = getIntenseComment(result.totalScore);
 
   const shareText = `【bukka_now 物価意識診断結果】\n物価意識スコア: 上位 ${result.topPercentile}% （総合スコア: ${result.totalScore}点）\n評価: ${intenseComment.punchline}\n判定: ${result.senseType.name}\n\nリアルタイム回答分布で診断しよう。\n#bukka_now #物価感覚診断`;
@@ -199,11 +210,50 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
     }
   };
 
-  // スクロール位置はそのまま維持して横スライド移動
-  const handleGoToDetail = () => setActiveBoard('detailed');
-  const handleGoToTrend = () => setActiveBoard('trend');
-  const handleBackToSummary = () => setActiveBoard('summary');
-  const handleBackToDetail = () => setActiveBoard('detailed');
+  // カード間ナビボタン（レール内に配置し、カードと一緒にスライドする）
+  // gapIndex 0 = サマリーと詳細の間 / 1 = 詳細と物価推移の間
+  // 左側のボードが表示中なら「→ 右のボードへ」、右側のボードが表示中なら「← 左のボードへ」、それ以外は非表示
+  const renderGapNav = (gapIndex: number) => {
+    const leftBoard = BOARD_ORDER[gapIndex];
+    const rightBoard = BOARD_ORDER[gapIndex + 1];
+    const isForward = activeBoard !== rightBoard;
+    const isVisible = activeBoard === leftBoard || activeBoard === rightBoard;
+    const target = isForward ? rightBoard : leftBoard;
+
+    return (
+      <div className="panel-gap-nav">
+        <button
+          type="button"
+          className={`whiteboard-gap-nav-btn ${isVisible ? '' : 'is-hidden'}`}
+          onClick={() => setActiveBoard(target)}
+          aria-label={isForward ? `${BOARD_LABELS[target]}へ進む` : `${BOARD_LABELS[target]}に戻る`}
+          aria-hidden={!isVisible}
+          tabIndex={isVisible ? 0 : -1}
+          id={`btn-nav-gap-${gapIndex}`}
+        >
+          {/* 向き・行き先が切り替わるたびに中身をフェードインし直す */}
+          <span key={target} className={`gap-nav-content ${isForward ? 'dir-right' : 'dir-left'}`}>
+            <span className="gap-nav-icon-wrapper">
+              <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#ffffff" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                {isForward ? (
+                  <>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </>
+                ) : (
+                  <>
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                  </>
+                )}
+              </svg>
+            </span>
+            <span className="gap-nav-label">{BOARD_LABELS[target]}</span>
+          </span>
+        </button>
+      </div>
+    );
+  };
 
   // スワイプ / ドラッグによる画面切り替えハンドラー（タッチ＆マウス対応）
   const touchStartXRef = React.useRef<number | null>(null);
@@ -392,60 +442,6 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
 
   return (
     <div className={`whiteboard-stage is-${activeBoard}-active`} id="result-dashboard-view">
-      {/* ナビボタン1：サマリー ⇄ 詳細 切替ボタン（カードと完全同期移動） */}
-      <button
-        type="button"
-        className={`whiteboard-fixed-nav-btn nav-btn-summary-detail pos-${activeBoard} ${activeBoard === 'summary' ? 'dir-right' : 'dir-left'}`}
-        onClick={activeBoard === 'summary' ? handleGoToDetail : handleBackToSummary}
-        aria-label={activeBoard === 'summary' ? 'データ詳細へ進む' : '診断サマリーに戻る'}
-        title={activeBoard === 'summary' ? 'データ詳細へ進む' : '診断サマリーに戻る'}
-        id="btn-nav-summary-detail"
-      >
-        <div className="fixed-nav-icon-wrapper">
-          {activeBoard === 'summary' ? (
-            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#ffffff" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#ffffff" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="19" y1="12" x2="5" y2="12"></line>
-              <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-          )}
-        </div>
-        <span className="fixed-nav-label">
-          {activeBoard === 'summary' ? '詳細データ' : 'サマリー'}
-        </span>
-      </button>
-
-      {/* ナビボタン2：詳細 ⇄ 物価推移 切替ボタン（カードと完全同期移動） */}
-      <button
-        type="button"
-        className={`whiteboard-fixed-nav-btn nav-btn-detail-trend pos-${activeBoard} ${activeBoard === 'trend' ? 'dir-left' : 'dir-right'}`}
-        onClick={activeBoard === 'trend' ? handleBackToDetail : handleGoToTrend}
-        aria-label={activeBoard === 'trend' ? '詳細データに戻る' : '物価推移へ進む'}
-        title={activeBoard === 'trend' ? '詳細データに戻る' : '物価推移へ進む'}
-        id="btn-nav-detail-trend"
-      >
-        <div className="fixed-nav-icon-wrapper">
-          {activeBoard === 'trend' ? (
-            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#ffffff" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="19" y1="12" x2="5" y2="12"></line>
-              <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#ffffff" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
-          )}
-        </div>
-        <span className="fixed-nav-label">
-          {activeBoard === 'trend' ? '詳細データ' : '物価推移'}
-        </span>
-      </button>
-
       {/* 【出題別の上までを独立したカードとして配置（横スライドせず画面固定）】 */}
       <div className="result-independent-score-card-wrap">
         <div className="glass-card animate-fade-in result-independent-score-card" id="independent-score-card">
@@ -495,50 +491,35 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                             <div className="unified-stat-cell you">
                               <span className="unified-stat-label">あなたの回答</span>
                               <span className="unified-stat-val">{item.userAnswer.toLocaleString()}{item.unit}</span>
-                              <span className="unified-stat-sub">自己予想値</span>
                             </div>
 
                             <div className="unified-stat-cell actual">
                               <span className="unified-stat-label">正解（公的相場）</span>
                               <span className="unified-stat-val">{item.actualPrice.toLocaleString()}{item.unit}</span>
-                              <span className="unified-stat-sub">公定価格</span>
                             </div>
 
                             <div className="unified-stat-cell avg">
                               <span className="unified-stat-label">全体平均</span>
                               <span className="unified-stat-val">{item.averageExpected.toLocaleString()}{item.unit}</span>
-                              <span className="unified-stat-sub">回答平均値</span>
                             </div>
 
                             <div className="unified-stat-cell min">
                               <span className="unified-stat-label">最低値（MIN）</span>
                               <span className="unified-stat-val">{item.minAnswer.toLocaleString()}{item.unit}</span>
-                              <span className="unified-stat-sub">最小回答</span>
                             </div>
 
                             <div className="unified-stat-cell max">
                               <span className="unified-stat-label">最高値（MAX）</span>
                               <span className="unified-stat-val">{item.maxAnswer.toLocaleString()}{item.unit}</span>
-                              <span className="unified-stat-sub">最大回答</span>
                             </div>
                           </div>
 
                           <div className="unified-chart-container">
-                            <DistributionBarChart
-                              distribution={item.distribution}
-                              userAnswer={item.userAnswer}
-                              actualPrice={item.actualPrice}
-                              minAnswer={item.minAnswer}
-                              maxAnswer={item.maxAnswer}
-                              unit={item.unit}
-                            />
+                            <DistributionBarChart distribution={item.distribution} />
                           </div>
 
-                          {item.priceNote && (
-                            <p className="unified-note-text">
-                              <span className="note-strong">品目概要:</span> {item.priceNote}
-                            </p>
-                          )}
+                          {/* コラム（3面共通） */}
+                          <PriceNoteColumn note={item.priceNote} />
                         </div>
                       );
                     })}
@@ -559,6 +540,7 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                 </div>
               </div>
             </div>
+            {renderGapNav(0)}
           </div>
 
           {/* 【面2：データ詳細ボード（1単位でプロットされた棒グラフ全問一覧）】 */}
@@ -595,6 +577,7 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                 </div>
               </div>
             </div>
+            {renderGapNav(1)}
           </div>
 
           {/* 【面3：物価推移ボード（過去から現在への価格変動全問一覧）】 */}

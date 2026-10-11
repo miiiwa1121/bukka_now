@@ -114,9 +114,19 @@ export function generateDistribution(
   return { distribution, minAnswer, maxAnswer, totalResponses, rawAnswers: samples };
 }
 
+/**
+ * 設問別の既存回答の集計値（今回の回答は含まない）
+ */
+export interface QuestionStats {
+  average: number;
+  count: number;
+  min?: number;
+  max?: number;
+}
+
 export function calculateQuizResult(
   userAnswers: UserAnswerItem[],
-  aggregatedAverages: Record<string, number> = {},
+  questionStats: Record<string, QuestionStats> = {},
   historicalAnswers: Record<string, number[]> = {}
 ): QuizSubmissionResult {
   const masterMap = new Map(QUIZ_MASTER.map((q) => [q.id, q]));
@@ -129,7 +139,7 @@ export function calculateQuizResult(
     const q = masterMap.get(answerItem.questionId);
     if (!q) continue;
 
-    const userAnswer = Number(answerItem.answer ?? (answerItem as unknown as Record<string, unknown>).userAnswer) || 0;
+    const userAnswer = answerItem.answer;
     const actual = q.actualPrice;
 
     // 相対誤差率
@@ -141,16 +151,20 @@ export function calculateQuizResult(
     const questionScore = Math.max(0, Math.min(100, Math.round(100 * (1 - errorRate / 0.4))));
     totalScoreSum += questionScore;
 
-    // 世間平均
-    const averageExpected = aggregatedAverages[q.id] ?? actual;
+    // 世間平均・回答者数・最低値・最高値（今回の回答を含めた値。既存回答がなければ自分の回答のみ）
+    const stats = questionStats[q.id];
+    const averageExpected = stats ? (stats.average * stats.count + userAnswer) / (stats.count + 1) : userAnswer;
+    const totalResponses = stats ? stats.count + 1 : 1;
 
-    // 分布棒グラフおよび最高値・最低値・回答者数
-    const { distribution, minAnswer, maxAnswer, totalResponses, rawAnswers } = generateDistribution(
+    // 分布棒グラフ（直近の回答サンプルから生成）
+    const { distribution, minAnswer: sampleMin, maxAnswer: sampleMax, rawAnswers } = generateDistribution(
       actual,
       userAnswer,
       Math.round(averageExpected),
       historicalAnswers[q.id] ?? []
     );
+    const minAnswer = Math.min(stats?.min ?? sampleMin, sampleMin);
+    const maxAnswer = Math.max(stats?.max ?? sampleMax, sampleMax);
 
     questionResults.push({
       questionId: q.id,

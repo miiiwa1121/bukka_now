@@ -1,8 +1,10 @@
-// src/components/DetailedPlotChart.tsx: 1単位でプロットされた高精度棒グラフコンポーネント
-// ホワイトボード調の精密プロット＆インタラクティブな詳細分析
+// src/components/DetailedPlotChart.tsx: 1円単位でプロットした回答分布の縦棒グラフ（面2）
+// 面1（DistributionBarChart）と同じパネル・凡例・配色・目盛りグリッド線で描画する
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import type { QuestionResultItem } from '../types/quiz';
+import { getBarColorClass } from './DistributionBarChart';
+import { PriceNoteColumn } from './PriceNoteColumn';
 
 interface DetailedPlotChartProps {
   item: QuestionResultItem;
@@ -12,21 +14,27 @@ interface DetailedPlotChartProps {
 interface PlotBarData {
   price: number;
   count: number;
-  percent: number;
-  isUser: boolean;
-  isActual: boolean;
-  isAvg: boolean;
+  hasUserAnswer: boolean;
+  hasActualPrice: boolean;
+  hasAverageExpected: boolean;
+}
+
+// 目盛り（横グリッド線）の本数。0人 から最大値までを4等分する
+const GRID_DIVISIONS = 4;
+
+/**
+ * 目盛りの最大値（人）。目盛りが整数になるよう4の倍数に切り上げる（最小4）
+ */
+function getScaleMax(maxCount: number): number {
+  return Math.max(GRID_DIVISIONS, Math.ceil(maxCount / GRID_DIVISIONS) * GRID_DIVISIONS);
 }
 
 export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, questionIndex }) => {
-  const [activeTooltip, setActiveTooltip] = useState<PlotBarData | null>(null);
+  const averagePrice = Math.round(item.averageExpected);
 
-  // 1単位プロット用のデータを集計
-  const { plotData, maxCount, stats } = useMemo(() => {
-    // rawAnswers（生の回答値リスト）を取得。なければユーザー回答のみ
-    const rawList = item.rawAnswers && item.rawAnswers.length > 0
-      ? item.rawAnswers
-      : [item.userAnswer];
+  // 1円単位プロット用のデータを集計
+  const { plotData, median } = useMemo(() => {
+    const rawList = item.rawAnswers.length > 0 ? item.rawAnswers : [item.userAnswer];
 
     // 金額ごとの回答人数をカウント
     const freqMap = new Map<number, number>();
@@ -34,65 +42,29 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
       freqMap.set(val, (freqMap.get(val) || 0) + 1);
     }
 
-    // 必ず含める重要な基準価格（正解・あなた・平均）
-    const keyPrices = new Set<number>([
-      item.userAnswer,
-      item.actualPrice,
-      Math.round(item.averageExpected),
-      ...Array.from(freqMap.keys()),
-    ]);
+    // 回答があった金額に加え、正解・あなた・平均の金額は必ず軸に含める
+    const prices = new Set<number>([item.userAnswer, item.actualPrice, averagePrice, ...freqMap.keys()]);
 
-    // 昇順にソートしたプロット対象リスト
-    const sortedPrices = Array.from(keyPrices).sort((a, b) => a - b);
-    const totalResponses = rawList.length;
-
-    const bars: PlotBarData[] = sortedPrices.map((price) => {
-      const count = freqMap.get(price) || 0;
-      const percent = totalResponses > 0 ? Math.round((count / totalResponses) * 100) : 0;
-      const isUser = price === item.userAnswer;
-      const isActual = price === item.actualPrice;
-      const isAvg = price === Math.round(item.averageExpected);
-
-      return {
+    const bars: PlotBarData[] = Array.from(prices)
+      .sort((a, b) => a - b)
+      .map((price) => ({
         price,
-        count,
-        percent,
-        isUser,
-        isActual,
-        isAvg,
-      };
-    });
+        count: freqMap.get(price) || 0,
+        hasUserAnswer: price === item.userAnswer,
+        hasActualPrice: price === item.actualPrice,
+        hasAverageExpected: price === averagePrice,
+      }));
 
-    const maxC = Math.max(...bars.map((b) => b.count), 1);
-
-    // 最頻値・中央値などの統計
     const sortedRaw = [...rawList].sort((a, b) => a - b);
-    const median = sortedRaw[Math.floor(sortedRaw.length / 2)] ?? item.userAnswer;
-    const diffActual = item.userAnswer - item.actualPrice;
 
     return {
       plotData: bars,
-      maxCount: maxC,
-      stats: {
-        total: totalResponses,
-        median,
-        diffActual,
-      },
+      median: sortedRaw[Math.floor(sortedRaw.length / 2)] ?? item.userAnswer,
     };
-  }, [item]);
+  }, [item, averagePrice]);
 
-  // バーの色・スタイルクラスを決定（シマシマ対応）
-  const getBarClass = (bar: PlotBarData) => {
-    if (bar.isUser && bar.isActual && bar.isAvg) return 'plot-stripe-all';
-    if (bar.isUser && bar.isActual) return 'plot-stripe-user-actual';
-    if (bar.isUser && bar.isAvg) return 'plot-stripe-user-avg';
-    if (bar.isActual && bar.isAvg) return 'plot-stripe-actual-avg';
-    if (bar.isUser) return 'plot-bar-user';
-    if (bar.isActual) return 'plot-bar-actual';
-    if (bar.isAvg) return 'plot-bar-avg';
-    if (bar.count > 0) return 'plot-bar-standard';
-    return 'plot-bar-ghost';
-  };
+  const scaleMax = getScaleMax(Math.max(...plotData.map((b) => b.count)));
+  const ticks = Array.from({ length: GRID_DIVISIONS + 1 }, (_, i) => (scaleMax / GRID_DIVISIONS) * i);
 
   return (
     <div className="unpis-question-card" id={`detailed-plot-${item.questionId}`}>
@@ -105,7 +77,7 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
         </div>
         <div className="unified-header-right">
           <span className="unified-meta-pill">
-            回答者数: <strong>{stats.total.toLocaleString()}</strong>人
+            回答者数: <strong>{item.totalResponses.toLocaleString()}</strong>人
           </span>
         </div>
       </div>
@@ -115,133 +87,105 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
         <div className="unified-stat-cell you">
           <span className="unified-stat-label">あなたの回答</span>
           <span className="unified-stat-val">{item.userAnswer.toLocaleString()}{item.unit}</span>
-          <span className="unified-stat-sub">
-            {stats.diffActual === 0
-              ? 'ピタリ正解'
-              : stats.diffActual > 0
-              ? `+${stats.diffActual.toLocaleString()}${item.unit}（高め）`
-              : `${stats.diffActual.toLocaleString()}${item.unit}（安め）`}
-          </span>
         </div>
 
         <div className="unified-stat-cell actual">
           <span className="unified-stat-label">正解（公的相場）</span>
           <span className="unified-stat-val">{item.actualPrice.toLocaleString()}{item.unit}</span>
-          <span className="unified-stat-sub">基準価格</span>
         </div>
 
         <div className="unified-stat-cell avg">
-          <span className="unified-stat-label">世間平均予想</span>
+          <span className="unified-stat-label">全体平均</span>
           <span className="unified-stat-val">{item.averageExpected.toLocaleString()}{item.unit}</span>
-          <span className="unified-stat-sub">全回答者平均</span>
         </div>
 
         <div className="unified-stat-cell past">
-          <span className="unified-stat-label">中央値 / 総回答</span>
-          <span className="unified-stat-val">{stats.median.toLocaleString()}{item.unit}</span>
-          <span className="unified-stat-sub">総回答数: {stats.total}人</span>
+          <span className="unified-stat-label">中央値</span>
+          <span className="unified-stat-val">{median.toLocaleString()}{item.unit}</span>
         </div>
       </div>
 
-      {/* 統一グラフコンテナ */}
-      <div className="unified-chart-container detailed-chart-container">
-        {/* 凡例（レジェンド） */}
-        <div className="detailed-plot-legend">
-          <span className="legend-chip">
-            <span className="color-dot user" /> あなたの回答
-          </span>
-          <span className="legend-chip">
-            <span className="color-dot actual" /> 正解（公的相場）
-          </span>
-          <span className="legend-chip">
-            <span className="color-dot avg" /> 世間平均
-          </span>
-          <span className="legend-chip">
-            <span className="color-dot stripe" /> 重なり
-          </span>
-          <span className="legend-chip">
-            <span className="color-dot general" /> 一般回答
-          </span>
-        </div>
-
-        {/* 1単位プロット棒グラフエリア（横スクロール可能・ホワイトボード上の方眼プロット） */}
-        <div className="detailed-chart-viewport">
-        <div className="plot-canvas-grid">
-          {/* Y軸の目盛り */}
-          <div className="plot-y-axis">
-            <span className="y-tick">{maxCount}人</span>
-            <span className="y-tick">{Math.ceil(maxCount / 2)}人</span>
-            <span className="y-tick">0人</span>
+      {/* 統一グラフコンテナ（面1と同じパネル・凡例） */}
+      <div className="unified-chart-container">
+        <div className="dist-chart-container">
+          <div className="dist-chart-top-bar">
+            <span className="dist-chart-title">1円単位の回答分布</span>
+            <div className="dist-chart-legend">
+              <span className="dist-legend-item">
+                <span className="legend-swatch bar-user" /> 回答
+              </span>
+              <span className="dist-legend-item">
+                <span className="legend-swatch bar-actual" /> 正解
+              </span>
+              <span className="dist-legend-item">
+                <span className="legend-swatch bar-avg" /> 平均値
+              </span>
+              <span className="dist-legend-item">
+                <span className="legend-swatch stripe-legend" /> 重なり
+              </span>
+            </div>
           </div>
 
-          {/* 棒グラフ本体（1単位プロット） */}
-          <div className="plot-bars-container">
-            {plotData.map((bar) => {
-              const heightPercent = bar.count > 0
-                ? Math.max(12, Math.round((bar.count / maxCount) * 85))
-                : 6; // カウントゼロでも基準価格なら薄く標示
-              const barClass = getBarClass(bar);
-
-              return (
-                <div
-                  key={bar.price}
-                  className={`plot-column ${bar.isUser ? 'is-focus-user' : ''} ${bar.isActual ? 'is-focus-actual' : ''}`}
-                  onMouseEnter={() => setActiveTooltip(bar)}
-                  onMouseLeave={() => setActiveTooltip(null)}
-                  onClick={() => setActiveTooltip(bar)}
-                >
-                  {/* 1単位のプロット棒 */}
-                  <div className="plot-bar-stem-wrap">
-                    <div
-                      className={`plot-bar-stem ${barClass}`}
-                      style={{ height: `${heightPercent}%` }}
-                    >
-                      {bar.count > 0 && (
-                        <span className="plot-bar-count-label">{bar.count}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* X軸の価格ラベル（1単位の金額） */}
-                  <div className="plot-x-label-wrap">
-                    <span className={`plot-x-price ${bar.isUser || bar.isActual ? 'highlight' : ''}`}>
-                      {bar.price.toLocaleString()}円
+          {/* 縦棒グラフ（金額の種類が多い場合は横スクロール。Y軸の目盛りは左に固定） */}
+          <div className="vplot-scroll">
+            <div className="vplot-content" style={{ minWidth: `calc(var(--vplot-axis-w) + ${plotData.length} * var(--vplot-col-min-w))` }}>
+              {/* Y軸の目盛りラベル（人数） */}
+              <div className="vplot-y-axis" aria-hidden="true">
+                <div className="vplot-inner">
+                  {ticks.map((tick) => (
+                    <span key={tick} className="vplot-y-label" style={{ bottom: `${(tick / scaleMax) * 100}%` }}>
+                      {tick}人
                     </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* プロット本体（背後に横グリッド線） */}
+              <div className="vplot-area">
+                <div className="vplot-inner">
+                  {ticks.map((tick) => (
+                    <span key={tick} className="vplot-grid-line" style={{ bottom: `${(tick / scaleMax) * 100}%` }} />
+                  ))}
+
+                  <div className="vplot-columns">
+                    {plotData.map((bar) => {
+                      const heightPercent = (bar.count / scaleMax) * 100;
+                      return (
+                        <div
+                          key={bar.price}
+                          className="vplot-column"
+                          title={`${bar.price.toLocaleString()}${item.unit}: ${bar.count}人`}
+                        >
+                          <div
+                            className={`vplot-bar ${getBarColorClass(bar)}${bar.count === 0 ? ' is-zero' : ''}`}
+                            style={{ height: bar.count > 0 ? `${heightPercent}%` : undefined }}
+                          />
+                          {/* 0人のマーカー（高さ5px）の場合はその上に出す */}
+                          <span className="vplot-count" style={{ bottom: bar.count > 0 ? `${heightPercent}%` : '5px' }}>
+                            {bar.count}人
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              );
-            })}
+              </div>
+
+              {/* X軸の金額ラベル */}
+              <div className="vplot-x-labels">
+                {plotData.map((bar) => (
+                  <span key={bar.price} className="vplot-x-label">
+                    {bar.price.toLocaleString()}{item.unit}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* インタラクティブな詳細吹き出しツールチップ */}
-        {activeTooltip && (
-          <div className="plot-tooltip-card animate-fade-in">
-            <div className="tooltip-title">{activeTooltip.price.toLocaleString()}{item.unit}</div>
-            <div className="tooltip-row">
-              <span>回答人数:</span>
-              <strong>{activeTooltip.count}人 ({activeTooltip.percent}%)</strong>
-            </div>
-            {activeTooltip.isActual && (
-              <div className="tooltip-badge actual">公的統計の正解価格です</div>
-            )}
-            {activeTooltip.isUser && (
-              <div className="tooltip-badge user">あなたの回答です</div>
-            )}
-            {activeTooltip.isAvg && (
-              <div className="tooltip-badge avg">全体の平均予想値です</div>
-            )}
-          </div>
-        )}
       </div>
-    </div>
 
-      {/* 統一注記・解説 */}
-      {item.priceNote && (
-        <p className="unified-note-text">
-          <span className="note-strong">品目概要:</span> {item.priceNote}
-        </p>
-      )}
+      {/* コラム（3面共通） */}
+      <PriceNoteColumn note={item.priceNote} />
     </div>
   );
 };

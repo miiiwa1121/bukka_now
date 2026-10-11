@@ -48,13 +48,13 @@ docs は**日本語**で、実務レベル一式を揃える（要件定義 / �
 - **API バックエンド**: Hono (TypeScript)
 - **データベース**: Cloudflare D1 (分散 SQLite)
 - **フロントエンド**: React (TypeScript / Vite)
-- **スタイリング**: Vanilla CSS（リッチなモダンデザイン・アニメーション・ダークテーマ）
+- **スタイリング**: Vanilla CSS（unpis.net 風のミニマルなライトテーマ。エクリュ背景・2px 黒アウトライン・影なし。絵文字不使用）
 - **ローカル開発・デプロイ**: Wrangler (Cloudflare CLI)
 
 ## コマンド
 
 ```bash
-# 開発サーバー起動（フロントエンド + API）
+# 開発サーバー起動（フロントエンド + API。D1 バインディングなし＝回答は保存されない）
 npm run dev
 
 # D1 ローカルDBマイグレーション
@@ -63,7 +63,11 @@ npm run db:migrate:local
 # プロダクトビルド
 npm run build
 
-# Cloudflare プレビュー / ローカルテスト
+# Cloudflare プレビュー / ローカルテスト（要 build。ローカル D1 付き）
 npm run preview
+
+# 本番デプロイ（Direct Upload）
+npm run deploy
 ```
 
+詳細は `docs/guide/setup.md` を参照。

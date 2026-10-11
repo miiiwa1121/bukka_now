@@ -32,9 +32,6 @@
   /* 太線 & オフセットシャドウ (unpis グラフィックスタイル) */
   --border-thick: 2px solid var(--ink-black);
   --border-thin: 1.5px solid var(--ink-black);
-  --shadow-flat-sm: 2px 2px 0 var(--ink-black);
-  --shadow-flat-md: 3px 3px 0 var(--ink-black);
-  --shadow-flat-lg: 5px 5px 0 var(--ink-black);
 
   /* 角丸 */
   --radius-sm: 8px;
@@ -50,8 +47,9 @@
   padding: 0;
 }
 
+/* 横はみ出しの抑止。hidden だと body がスクロールコンテナになり position: sticky（カード間ナビボタン）が効かなくなるため clip を使う */
 html, body {
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -103,14 +101,8 @@ body.detailed-view-active {
   border: var(--border-thick);
   border-radius: var(--radius-pill);
   padding: 0.4rem 1rem 0.4rem 0.6rem;
-  box-shadow: var(--shadow-flat-sm);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
-.brand-badge:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: var(--shadow-flat-md);
-}
 
 .brand-svg-icon {
   display: block;
@@ -148,7 +140,6 @@ body.detailed-view-active {
   border: var(--border-thick);
   border-radius: var(--radius-lg);
   padding: 2.2rem 2rem;
-  box-shadow: var(--shadow-flat-lg);
   position: relative;
   overflow: hidden;
 }
@@ -160,7 +151,6 @@ body.detailed-view-active {
   background: var(--bg-surface);
   border: var(--border-thick);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-flat-lg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -178,7 +168,6 @@ body.detailed-view-active {
   font-size: 0.88rem;
   font-weight: 700;
   color: var(--ink-black);
-  box-shadow: var(--shadow-flat-sm);
   margin-bottom: 2rem;
 }
 
@@ -259,26 +248,19 @@ body.detailed-view-active {
   align-items: baseline;
   justify-content: center;
   gap: 0.15rem;
-  box-shadow: var(--shadow-flat-sm);
   transition: all 0.1s ease;
   user-select: none;
 }
 
 .count-chip-btn:hover {
   background: var(--bg-page);
-  transform: translate(-1px, -1px);
 }
 
-.count-chip-btn:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 0 var(--ink-black);
-}
 
 /* 選択中チップ: ポピーレッド */
 .count-chip-btn.active {
   background: var(--unpis-red);
   color: #ffffff;
-  box-shadow: var(--shadow-flat-sm);
 }
 
 .count-chip-btn.active .chip-num,
@@ -323,27 +305,19 @@ body.detailed-view-active {
   border: var(--border-thick);
   border-radius: var(--radius-pill);
   cursor: pointer;
-  box-shadow: var(--shadow-flat-md);
   transition: all 0.1s ease;
   letter-spacing: 0.02em;
 }
 
 .btn-primary:hover {
   background: var(--unpis-red-hover);
-  transform: translate(-1px, -1px);
-  box-shadow: var(--shadow-flat-lg);
 }
 
-.btn-primary:active {
-  transform: translate(3px, 3px);
-  box-shadow: 0 0 0 var(--ink-black);
-}
 
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
-  box-shadow: var(--shadow-flat-sm);
 }
 
 /* サブボタン (白背景＋黒太枠) */
@@ -357,19 +331,13 @@ body.detailed-view-active {
   font-weight: 700;
   font-size: 0.88rem;
   cursor: pointer;
-  box-shadow: var(--shadow-flat-sm);
   transition: all 0.1s ease;
 }
 
 .btn-subtle:hover {
   background: var(--bg-panel);
-  transform: translate(-1px, -1px);
 }
 
-.btn-subtle:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 0 var(--ink-black);
-}
 
 /* 2. Quiz View */
 .quiz-progress-bar {
@@ -418,7 +386,6 @@ body.detailed-view-active {
   border: var(--border-thick);
   border-radius: var(--radius-pill);
   padding: 0.25rem 0.85rem;
-  box-shadow: var(--shadow-flat-sm);
   font-size: 0.82rem;
   font-weight: 800;
   transition: all 0.2s ease;
@@ -461,11 +428,9 @@ body.detailed-view-active {
 @keyframes timerPulse {
   from {
     transform: scale(1);
-    box-shadow: var(--shadow-flat-sm);
   }
   to {
     transform: scale(1.04);
-    box-shadow: 2.5px 2.5px 0 var(--unpis-red);
   }
 }
 
@@ -536,7 +501,6 @@ body.detailed-view-active {
   border-radius: var(--radius-md);
   padding: 1.1rem 1.4rem;
   text-align: right;
-  box-shadow: var(--shadow-flat-sm);
 }
 
 .numpad-display-label {
@@ -603,19 +567,13 @@ body.detailed-view-active {
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  box-shadow: var(--shadow-flat-sm);
   transition: all 0.1s ease;
 }
 
 .numpad-key:hover {
   background: var(--bg-panel);
-  transform: translate(-1px, -1px);
 }
 
-.numpad-key:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 0 var(--ink-black);
-}
 
 /* クリアキー */
 .numpad-key.action-clear {
@@ -658,7 +616,6 @@ body.detailed-view-active {
   text-align: center;
   background: var(--bg-panel);
   border: var(--border-thick);
-  box-shadow: var(--shadow-flat-md);
   border-radius: var(--radius-lg);
   padding: 2.2rem 1.5rem;
   margin-bottom: 2.5rem;
@@ -714,7 +671,6 @@ body.detailed-view-active {
   padding: 0.4rem 1.1rem;
   border-radius: var(--radius-pill);
   border: var(--border-thick);
-  box-shadow: var(--shadow-flat-sm);
 }
 
 .summary-pill.score {
@@ -732,7 +688,6 @@ body.detailed-view-active {
   padding: 1.2rem 1.4rem;
   border: var(--border-thick);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-flat-md);
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -768,7 +723,6 @@ body.detailed-view-active {
 .result-intense-comment.comment-perfect-100 {
   background: #fffbe6;
   border: 3px solid var(--ink-black);
-  box-shadow: 5px 5px 0 #f5a623;
 }
 .result-intense-comment.comment-perfect-100 .comment-punchline {
   color: #b87400;
@@ -783,7 +737,6 @@ body.detailed-view-active {
   background: var(--ink-black);
   color: #ffffff;
   border: 3px solid var(--unpis-red);
-  box-shadow: 5px 5px 0 var(--unpis-red);
 }
 .result-intense-comment.comment-zero-point .comment-punchline {
   color: var(--unpis-red);
@@ -899,7 +852,6 @@ body.detailed-view-active {
   border: var(--border-thick);
   border-radius: var(--radius-md);
   padding: 1.5rem;
-  box-shadow: var(--shadow-flat-md);
 }
 
 .card-header-clean {
@@ -1017,9 +969,6 @@ body.detailed-view-active {
   justify-content: center;
   gap: 0.75rem;
   flex-wrap: wrap;
-  margin-bottom: 2.2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: var(--border-thin);
 }
 
 .btn-action-top {
@@ -1034,22 +983,13 @@ body.detailed-view-active {
   font-weight: 800;
   font-size: 0.88rem;
   cursor: pointer;
-  box-shadow: var(--shadow-flat-sm);
   text-decoration: none;
   transition: all 0.1s ease;
   user-select: none;
   white-space: nowrap;
 }
 
-.btn-action-top:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: var(--shadow-flat-md);
-}
 
-.btn-action-top:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 0 var(--ink-black);
-}
 
 .btn-x-share-top {
   background: var(--ink-black);
@@ -1081,26 +1021,39 @@ body.detailed-view-active {
   padding-top: 1.5rem;
 }
 
-/* Distribution Chart Direct (数字の横に直接伸びる10分割横棒グラフ・背景枠なし) */
+/* Distribution Chart Direct (数字の横に直接伸びる10分割横棒グラフ・目盛りグリッド線付き) */
 .dist-chart-container {
+  --dist-label-w: 90px;          /* 金額ラベル列の幅 */
+  --dist-col-gap: 0.75rem;       /* 金額ラベルと棒の間隔 */
+  --dist-pct-reserve: 2.6rem;    /* 100% の棒でも割合テキストが収まる右側の余白 */
   background: var(--bg-panel);
   border: var(--border-thin);
   border-radius: var(--radius-sm);
-  padding: 0.85rem 1rem;
+  padding: 0.75rem 1rem 0.6rem;
   height: 100%;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  overflow: hidden;
+}
+
+@media (max-width: 540px) {
+  .dist-chart-container {
+    --dist-label-w: 72px;
+    --dist-col-gap: 0.5rem;
+    padding: 0.7rem 0.75rem 0.55rem;
+  }
 }
 
 .dist-chart-top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
   font-size: 0.82rem;
-  margin-bottom: 0.45rem;
-  padding-bottom: 0.35rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.4rem;
   border-bottom: 1px dashed var(--ink-muted);
   flex-shrink: 0;
 }
@@ -1111,81 +1064,125 @@ body.detailed-view-active {
   letter-spacing: 0.04em;
 }
 
-.dist-min-max-inline {
-  color: var(--ink-subtle);
-  font-weight: 600;
-}
-
-.dist-min-max-inline strong {
-  color: var(--ink-black);
-}
-
-.dist-stat-divider {
-  margin: 0 0.4rem;
-  color: var(--ink-muted);
-}
-
-/* 10分割横棒ヒストグラムリスト */
-.dist-bars-list-direct {
+/* 棒グラフ本体 + 背後の縦グリッド線 */
+.dist-plot-area {
+  position: relative;
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  gap: 0.35rem;
+  min-height: 0;
+}
+
+.dist-grid-lines {
+  position: absolute;
+  left: calc(var(--dist-label-w) + var(--dist-col-gap));
+  right: var(--dist-pct-reserve);
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.dist-grid-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed var(--ink-muted);
+  opacity: 0.55;
+}
+
+.dist-grid-line:first-child {
+  border-left: 1.5px solid var(--ink-black);
+  opacity: 1;
+}
+
+/* 10分割横棒ヒストグラムリスト（10行を高さ方向に均等配分） */
+.dist-bars-list-direct {
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-template-rows: repeat(10, minmax(0, 1fr));
 }
 
 .dist-bar-item-inline {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--dist-col-gap);
+  min-height: 0;
 }
 
 /* 金額ラベル（数字）: 右揃えで綺麗に整列 */
 .dist-price-label {
-  width: 90px;
+  width: var(--dist-label-w);
   flex-shrink: 0;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
+  line-height: 1;
   color: var(--ink-black);
   text-align: right;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 @media (max-width: 540px) {
   .dist-price-label {
-    width: 72px;
-    font-size: 0.76rem;
+    font-size: 0.74rem;
+  }
+  .dist-chart-legend {
+    gap: 0.25rem 0.6rem;
   }
 }
 
-/* 数字の真横から直接伸びる棒エリア */
-.dist-bar-growth-area {
+/* 棒が伸びるトラック（幅 = 目盛りの 0%〜最大値） */
+.dist-bar-track {
+  position: relative;
   flex: 1;
+  min-width: 0;
+  height: 100%;
+  margin-right: var(--dist-pct-reserve);
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  min-width: 0;
 }
 
-/* カラー凡例（レジェンド: 回答・正解・平均値・重なり） */
+/* 目盛りラベル（0% / 25% ...） */
+.dist-axis-labels {
+  position: relative;
+  height: 0.95rem;
+  margin-top: 0.15rem;
+  margin-left: calc(var(--dist-label-w) + var(--dist-col-gap));
+  margin-right: var(--dist-pct-reserve);
+  flex-shrink: 0;
+}
+
+.dist-axis-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink-subtle);
+  white-space: nowrap;
+}
+
+/* 狭い画面では目盛りラベルが重なるため両端（0% と最大値）だけ表示（グリッド線は全て残す） */
+@media (max-width: 540px) {
+  .dist-axis-label:not(:first-child):not(:last-child) {
+    display: none;
+  }
+}
+
+/* カラー凡例（レジェンド: 回答・正解・平均値・重なり）: タイトル横にインライン配置 */
 .dist-chart-legend {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
-  margin-bottom: 0.9rem;
-  padding: 0.35rem 0.6rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--ink-black);
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
 }
 
 .dist-legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
   color: var(--ink-black);
 }
 
@@ -1224,40 +1221,38 @@ body.detailed-view-active {
 
 /* ダイレクト横棒: 背景枠（トラック）なし！棒そのもののアート */
 .dist-bar-direct {
-  height: 15px;
+  position: relative;
+  height: 13px;
+  box-sizing: border-box;
   background: #d4cfc5;
   border: 1.5px solid var(--ink-black);
   border-radius: 3px;
-  box-shadow: 1px 1px 0 var(--ink-black);
   transition: width 0.3s ease;
   flex-shrink: 0;
 }
 
 /* 単色: あなたの回答 (コバルトブルー) */
-.dist-bar-direct.bar-user {
+:is(.dist-bar-direct, .vplot-bar).bar-user {
   background: var(--unpis-blue);
-  box-shadow: 1.5px 1.5px 0 var(--ink-black);
 }
 
 /* 単色: 正解 (リーフグリーン) */
-.dist-bar-direct.bar-actual {
+:is(.dist-bar-direct, .vplot-bar).bar-actual {
   background: var(--unpis-green);
-  box-shadow: 1.5px 1.5px 0 var(--ink-black);
 }
 
 /* 単色: 平均値 (マスタードイエロー) */
-.dist-bar-direct.bar-avg {
+:is(.dist-bar-direct, .vplot-bar).bar-avg {
   background: var(--unpis-yellow);
-  box-shadow: 1.5px 1.5px 0 var(--ink-black);
 }
 
 /* デフォルト（いずれにも該当しない一般バー） */
-.dist-bar-direct.bar-default {
+:is(.dist-bar-direct, .vplot-bar).bar-default {
   background: #d4cfc5;
 }
 
 /* 重なり: あなた ＋ 正解 (青 & 緑の斜めシマシマ) */
-.dist-bar-direct.stripe-user-actual {
+:is(.dist-bar-direct, .vplot-bar).stripe-user-actual {
   background: repeating-linear-gradient(
     45deg,
     var(--unpis-blue) 0px,
@@ -1265,11 +1260,10 @@ body.detailed-view-active {
     var(--unpis-green) 6px,
     var(--unpis-green) 12px
   );
-  box-shadow: 1.5px 1.5px 0 var(--ink-black);
 }
 
 /* 重なり: あなた ＋ 平均値 (青 & 黄の斜めシマシマ) */
-.dist-bar-direct.stripe-user-avg {
+:is(.dist-bar-direct, .vplot-bar).stripe-user-avg {
   background: repeating-linear-gradient(
     45deg,
     var(--unpis-blue) 0px,
@@ -1277,11 +1271,10 @@ body.detailed-view-active {
     var(--unpis-yellow) 6px,
     var(--unpis-yellow) 12px
   );
-  box-shadow: 1.5px 1.5px 0 var(--ink-black);
 }
 
 /* 重なり: 正解 ＋ 平均値 (緑 & 黄の斜めシマシマ) */
-.dist-bar-direct.stripe-actual-avg {
+:is(.dist-bar-direct, .vplot-bar).stripe-actual-avg {
   background: repeating-linear-gradient(
     45deg,
     var(--unpis-green) 0px,
@@ -1289,11 +1282,10 @@ body.detailed-view-active {
     var(--unpis-yellow) 6px,
     var(--unpis-yellow) 12px
   );
-  box-shadow: 1.5px 1.5px 0 var(--ink-black);
 }
 
 /* 重なり: 3者全て重複 (青 & 緑 & 黄の3色斜めシマシマ) */
-.dist-bar-direct.stripe-all {
+:is(.dist-bar-direct, .vplot-bar).stripe-all {
   background: repeating-linear-gradient(
     45deg,
     var(--unpis-blue) 0px,
@@ -1303,29 +1295,19 @@ body.detailed-view-active {
     var(--unpis-yellow) 10px,
     var(--unpis-yellow) 15px
   );
-  box-shadow: 1.5px 1.5px 0 var(--ink-black);
 }
 
-.dist-bar-direct.is-zero {
-  width: 0 !important;
-  border: none;
-  box-shadow: none;
-}
-
-/* 棒の右側に並ぶパーセント */
-.dist-inline-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
+/* 棒の先端に並ぶパーセント */
 .dist-bin-percent {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0.4rem;
   color: var(--ink-subtle);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  min-width: 28px;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .btn-x-share {
@@ -1339,19 +1321,13 @@ body.detailed-view-active {
   font-weight: 800;
   font-size: 0.9rem;
   text-decoration: none;
-  box-shadow: var(--shadow-flat-sm);
   transition: all 0.1s ease;
 }
 
 .btn-x-share:hover {
   background: #333333;
-  transform: translate(-1px, -1px);
 }
 
-.btn-x-share:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 0 var(--ink-black);
-}
 
 /* App Footer */
 .app-footer {
@@ -1390,11 +1366,14 @@ body.detailed-view-active {
   right: 50%;
   margin-left: -50vw;
   margin-right: -50vw;
-  overflow: hidden;
+  overflow-x: clip; /* sticky を効かせるため hidden ではなく clip（縦方向は visible） */
   --card-width: min(760px, calc(100vw - 120px));
   --card-peek: 90px;
   /* 画面中央からカード間の隙間中央までのオフセット距離 */
   --btn-offset: calc(25vw + (var(--card-width) / 4) - (var(--card-peek) / 2));
+  /* カード間の隙間（次のカードが画面端から --card-peek だけチラ見えする距離） */
+  --rail-gap: calc(50vw - (var(--card-width) / 2) - var(--card-peek));
+  --gap-nav-size: 104px;
 }
 
 @media (max-width: 640px) {
@@ -1402,13 +1381,14 @@ body.detailed-view-active {
     --card-width: calc(100vw - 80px);
     --card-peek: 36px;
     --btn-offset: calc(25vw + (var(--card-width) / 4) - (var(--card-peek) / 2));
+    --gap-nav-size: 68px;
   }
 }
 
 /* ホワイトボードスライドラック（横スライド機構・スワイプ/ドラッグ対応） */
 .whiteboard-track-viewport {
   width: 100vw;
-  overflow: hidden;
+  overflow-x: clip; /* sticky を効かせるため hidden ではなく clip */
   position: relative;
   touch-action: pan-y;
   cursor: grab;
@@ -1423,8 +1403,7 @@ body.detailed-view-active {
   align-items: flex-start;
   /* 最初のカード（サマリー）が画面中央に配置されるよう左パディングを設定 */
   padding-left: calc(50vw - (var(--card-width) / 2));
-  /* カード間の隙間：次のカードが画面端から --card-peek チラ見えする距離 */
-  gap: calc(50vw - (var(--card-width) / 2) - var(--card-peek));
+  gap: var(--rail-gap);
   /* 自然で滑らかなカメラ移動トランジション */
   transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
@@ -1441,6 +1420,7 @@ body.detailed-view-active {
 }
 
 .whiteboard-panel {
+  position: relative;
   width: var(--card-width);
   min-width: var(--card-width);
   flex-shrink: 0;
@@ -1454,47 +1434,70 @@ body.detailed-view-active {
 }
 
 /* ==========================================================================
-   特大矢印ナビゲーションボタン（赤背景・白文字・黒枠なし・影なし・カードと完全同期移動）
+   カード間ナビゲーションボタン（赤背景・白文字・黒枠なし）
+   スライドレール内のカード間の隙間に置き、カードと一緒にスライドする。
+   縦方向は sticky で画面中央に留まるが、レール（下のカード群）の範囲外には出ないため
+   固定表示の上部スコアカードには重ならない
    ========================================================================== */
-.whiteboard-fixed-nav-btn {
-  position: fixed;
-  top: 50%;
-  left: 50vw;
+.panel-gap-nav {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 100%;
+  width: var(--rail-gap);
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  pointer-events: none; /* 隙間部分はスワイプ・ドラッグを妨げない */
+  z-index: 5;
+}
+
+.whiteboard-gap-nav-btn {
+  position: sticky;
+  top: calc(50vh - var(--gap-nav-size) / 2);
+  flex-shrink: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  width: 104px;
-  height: 104px;
+  width: var(--gap-nav-size);
+  height: var(--gap-nav-size);
+  padding: 0;
   background: var(--unpis-red);
   border: none;
   border-radius: 50%;
-  box-shadow: none;
   cursor: pointer;
   color: #ffffff;
-  z-index: 100;
   user-select: none;
-  /* レールの移動と完全に同じ時間・同じイージングで同期移動 */
-  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), 
-              opacity 0.35s ease,
-              background-color 0.15s ease;
-  will-change: transform, opacity;
+  pointer-events: auto;
+  transition: opacity 0.35s ease, background-color 0.15s ease;
 }
 
-.whiteboard-fixed-nav-btn svg {
+/* 行き先がない（隣接するどちらのボードも表示中でない）ボタンは非表示 */
+.whiteboard-gap-nav-btn.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gap-nav-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.whiteboard-gap-nav-btn svg {
   display: block;
   stroke: #ffffff;
 }
 
-.whiteboard-fixed-nav-btn .fixed-nav-icon-wrapper {
+.gap-nav-icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
   transition: transform 0.2s ease;
 }
 
-.whiteboard-fixed-nav-btn .fixed-nav-label {
+.gap-nav-label {
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -1502,80 +1505,36 @@ body.detailed-view-active {
   line-height: 1;
 }
 
-/* --- ボタン1：サマリー ⇄ 詳細 切替ボタン --- */
-.nav-btn-summary-detail.pos-summary {
-  transform: translate(calc(var(--btn-offset) - 50%), -50%);
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.nav-btn-summary-detail.pos-detailed {
-  transform: translate(calc(-1 * var(--btn-offset) - 50%), -50%);
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.nav-btn-summary-detail.pos-trend {
-  transform: translate(calc(-3 * var(--btn-offset) - 50%), -50%);
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* --- ボタン2：詳細 ⇄ 物価推移 切替ボタン --- */
-.nav-btn-detail-trend.pos-summary {
-  transform: translate(calc(3 * var(--btn-offset) - 50%), -50%);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.nav-btn-detail-trend.pos-detailed {
-  transform: translate(calc(var(--btn-offset) - 50%), -50%);
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.nav-btn-detail-trend.pos-trend {
-  transform: translate(calc(-1 * var(--btn-offset) - 50%), -50%);
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* ホバー時のリアクション */
-.whiteboard-fixed-nav-btn:hover {
+/* ホバー時のリアクション（矢印を進行方向へ少しずらす） */
+.whiteboard-gap-nav-btn:hover {
   background: var(--unpis-red-hover);
-  box-shadow: none;
 }
 
-.whiteboard-fixed-nav-btn.dir-right:hover .fixed-nav-icon-wrapper {
+.whiteboard-gap-nav-btn:hover .dir-right .gap-nav-icon-wrapper {
   transform: translateX(4px);
 }
 
-.whiteboard-fixed-nav-btn.dir-left:hover .fixed-nav-icon-wrapper {
+.whiteboard-gap-nav-btn:hover .dir-left .gap-nav-icon-wrapper {
   transform: translateX(-4px);
 }
 
 /* クリック（押し込み）時 */
-.whiteboard-fixed-nav-btn:active {
-  box-shadow: none;
+.whiteboard-gap-nav-btn:active {
   scale: 0.95;
 }
 
-/* スマホ表示（幅640px以下）：カード間に合わせてサイズ調整 */
+/* スマホ表示（幅640px以下）：ボタンを小さく */
 @media (max-width: 640px) {
-  .whiteboard-fixed-nav-btn {
-    width: 68px;
-    height: 68px;
-    border: none;
-    box-shadow: none;
+  .gap-nav-content {
     gap: 0.15rem;
   }
 
-  .whiteboard-fixed-nav-btn svg {
+  .whiteboard-gap-nav-btn svg {
     width: 28px;
     height: 28px;
   }
 
-  .whiteboard-fixed-nav-btn .fixed-nav-label {
+  .gap-nav-label {
     font-size: 0.68rem;
   }
 }
@@ -1619,7 +1578,6 @@ body.detailed-view-active {
   border: var(--border-thick);
   border-radius: var(--radius-md);
   padding: 1.5rem;
-  box-shadow: var(--shadow-flat-md);
   display: flex;
   flex-direction: column;
 }
@@ -1673,8 +1631,23 @@ body.detailed-view-active {
   margin: 0;
 }
 
+/* 右上ピルの幅は面ごとに違う（回答者数 / 変動率）ため、領域幅を固定してタイトルの折り返しを3面で一致させる */
 .unified-header-right {
   flex-shrink: 0;
+  width: 10.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 狭い画面ではピルをタイトルの下の行に回し、タイトルに全幅を使わせる */
+@media (max-width: 640px) {
+  .unified-card-header {
+    flex-wrap: wrap;
+  }
+  .unified-header-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 .unified-meta-pill {
@@ -1702,7 +1675,6 @@ body.detailed-view-active {
   border-radius: var(--radius-sm);
   padding: 0.75rem 0.85rem;
   margin-bottom: 1.25rem;
-  box-shadow: 2px 2px 0 var(--ink-black);
   box-sizing: border-box;
   min-height: 86px;
   height: 86px;
@@ -1824,81 +1796,183 @@ body.detailed-view-active {
 }
 
 /* 統一注記テキスト */
-.unified-note-text {
-  font-size: 0.84rem;
-  font-weight: 600;
-  line-height: 1.55;
-  color: var(--ink-subtle);
-  background: var(--bg-canvas);
-  border-left: 3px solid var(--ink-black);
-  padding: 0.5rem 0.8rem;
-  margin: 0;
-  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+/* コラム（価格の背景解説）: 3面共通の PriceNoteColumn で描画し、内容・高さを完全一致させる */
+.price-note-column {
+  position: relative;
+  margin: 0.4rem 0 0;
+  padding: 1.05rem 1rem 0.8rem;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--ink-black);
+  border-radius: var(--radius-sm);
 }
 
-.unified-note-text .note-strong {
+/* 枠線の上辺に重ねる見出しラベル */
+.price-note-column-label {
+  position: absolute;
+  top: 0;
+  left: 0.85rem;
+  transform: translateY(-50%);
+  padding: 0.12rem 0.6rem;
+  background: var(--ink-black);
+  color: #ffffff;
+  border-radius: var(--radius-pill);
+  font-size: 0.7rem;
   font-weight: 800;
-  color: var(--ink-black);
-  margin-right: 0.35rem;
+  letter-spacing: 0.12em;
+  line-height: 1.4;
+}
+
+.price-note-column-text {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.7;
+  color: var(--ink-subtle);
 }
 
 /* ==========================================================================
-   物価推移折れ線グラフ (PriceTrendChart - Line Chart SVG)
+   物価推移折れ線グラフ (PriceTrendChart / 面3)
+   軸・グリッド・ラベルは面2の .vplot-* を共用。ここでは折れ線・地点・吹き出しのみ定義
    ========================================================================== */
-.trend-line-chart-container {
-  background: #ffffff;
-  border: 2px solid var(--ink-black);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 0.8rem;
-  box-shadow: 2px 2px 0 var(--ink-black);
-  height: 100%;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.trend-line-svg {
-  width: 100%;
-  height: 100%;
-  max-height: 270px;
-  display: block;
-  font-family: inherit;
-}
-
-.grid-tick-text {
-  font-size: 11px;
-  font-weight: 700;
-  fill: #64748b;
-}
-
-.timeline-year-text {
-  font-size: 12px;
-  font-weight: 800;
-  fill: var(--ink-black);
-}
-
-.timeline-year-text.is-current {
-  fill: var(--unpis-red);
-  font-weight: 900;
-}
-
-.trend-point-label {
-  font-size: 11px;
-  font-weight: 800;
-  fill: var(--ink-black);
-}
-
-.trend-point-label.past-label {
-  fill: #64748b;
+.vplot-scroll.trend-plot {
+  --vplot-axis-w: 4.2rem;        /* 金額ラベル（例: 12,800円）が収まる幅 */
+  --vplot-top-room: 1.9rem;      /* 最上部の地点でも吹き出しが収まる余白 */
+  overflow-x: visible;
 }
 
 @media (max-width: 640px) {
+  .vplot-scroll.trend-plot {
+    --vplot-axis-w: 3.5rem;
+  }
+  .trend-plot .x-label-suffix {
+    display: none;
+  }
+}
+
+.trend-line-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.trend-area {
+  fill: var(--unpis-red);
+  fill-opacity: 0.1;
+}
+
+.trend-line {
+  fill: none;
+  stroke: var(--ink-black);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke; /* viewBox を引き伸ばしても線幅を一定に保つ */
+}
+
+/* 押せる地点（当たり判定は 28px、見た目の点は ::before） */
+.trend-point {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  transform: translate(-50%, 50%);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.trend-point::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+  background: #ffffff;
+  border: 2.5px solid var(--ink-black);
+  border-radius: 50%;
+  transition: width 0.15s ease, height 0.15s ease, background-color 0.15s ease;
+}
+
+.trend-point:hover::before,
+.trend-point.is-selected::before {
+  width: 16px;
+  height: 16px;
+}
+
+.trend-point.is-selected::before {
+  background: var(--ink-black);
+}
+
+.trend-point:focus-visible {
+  outline: 2px solid var(--unpis-blue);
+  outline-offset: 0;
+}
+
+/* 選択中の地点の価格吹き出し（黒地・白文字） */
+.trend-tooltip {
+  position: absolute;
+  transform: translate(-50%, -14px);
+  padding: 0.28rem 0.6rem;
+  background: var(--ink-black);
+  color: #ffffff;
+  border-radius: var(--radius-xs, 4px);
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
+  /* transform は位置決めに使うため、不透明度だけのフェードにする */
+  animation: tooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 吹き出しを地点の下側に出す（上部に余裕がない場合） */
+.trend-tooltip.is-below {
+  transform: translate(-50%, calc(100% + 14px));
+}
+
+/* 左端・右端の地点ではグラフ外にはみ出さないよう寄せる */
+.trend-tooltip.align-start {
+  transform: translate(-20%, -14px);
+}
+
+.trend-tooltip.align-end {
+  transform: translate(-80%, -14px);
+}
+
+.trend-tooltip.align-start.is-below {
+  transform: translate(-20%, calc(100% + 14px));
+}
+
+.trend-tooltip.align-end.is-below {
+  transform: translate(-80%, calc(100% + 14px));
+}
+
+@media (max-width: 640px) {
+  /* 2カラム折り返し時（5項目=3行）でも収まるよう、全ボード共通で高さを固定（ボード間の縦位置同期のため auto にはしない） */
   .unified-metrics-grid,
   .unified-metrics-grid.grid-five {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
+    height: 180px;
+    min-height: 180px;
+    align-content: center;
   }
   .unified-q-title {
     font-size: 1rem;
@@ -1912,387 +1986,144 @@ body.detailed-view-active {
 }
 
 /* --------------------------------------------------------------------------
-   1単位プロット棒グラフコンポーネント (DetailedPlotChart)
+   1円単位プロット縦棒グラフ (DetailedPlotChart / 面2)
+   パネル・凡例・配色は面1（.dist-*）と共通。ここでは縦棒レイアウトのみ定義
    -------------------------------------------------------------------------- */
 
-
-.plot-stat-chip {
-  display: flex;
-  flex-direction: column;
-  padding: 0.75rem;
-  background: #ffffff;
-  border: 2px solid var(--ink-black);
-  border-radius: var(--radius-sm);
-  box-shadow: 2px 2px 0 var(--ink-black);
-}
-
-.plot-stat-chip.you {
-  background: #fff5f5;
-  border-color: var(--color-red);
-}
-
-.plot-stat-chip.actual {
-  background: #f0fdf4;
-  border-color: var(--color-green);
-}
-
-.plot-stat-chip.avg {
-  background: #f0f9ff;
-  border-color: var(--color-blue);
-}
-
-.stat-chip-label {
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: var(--ink-subtle);
-  margin-bottom: 0.2rem;
-}
-
-.stat-chip-val {
-  font-size: 1.15rem;
-  font-weight: 900;
-  color: var(--ink-black);
-}
-
-.stat-chip-sub {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--ink-subtle);
-  margin-top: 0.15rem;
-}
-
-.detailed-chart-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-  box-sizing: border-box;
-}
-
-/* 凡例 */
-.detailed-plot-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem;
-  margin-bottom: 0.45rem;
-  padding-bottom: 0.35rem;
-  border-bottom: 1px solid #e2e8f0;
-  flex-shrink: 0;
-}
-
-.legend-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: var(--ink-black);
-}
-
-.legend-chip .color-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  border: 1px solid var(--ink-black);
-}
-
-.legend-chip .color-dot.user {
-  background: var(--color-red);
-}
-
-.legend-chip .color-dot.actual {
-  background: var(--color-green);
-}
-
-.legend-chip .color-dot.avg {
-  background: var(--color-blue);
-}
-
-.legend-chip .color-dot.stripe {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--color-red),
-    var(--color-red) 3px,
-    var(--color-green) 3px,
-    var(--color-green) 6px
-  );
-}
-
-.legend-chip .color-dot.general {
-  background: #475569;
-}
-
-/* 1単位プロットビューポート（横スクロール可能方眼紙） */
-.detailed-chart-viewport {
+.vplot-scroll {
+  --vplot-axis-w: 2.6rem;        /* Y軸ラベル列の幅 */
+  --vplot-col-min-w: 48px;       /* 1金額あたりの最小列幅（超えると横スクロール） */
+  --vplot-top-room: 1.1rem;      /* 棒の上に出す人数ラベル用の余白 */
+  --vplot-x-label-h: 1.3rem;     /* X軸ラベル行の高さ */
   flex: 1;
-  position: relative;
-  background: #ffffff;
-  border: 2px solid var(--ink-black);
-  border-radius: var(--radius-sm);
-  padding: 0.8rem 0.8rem 0.4rem 0.8rem;
-  margin-bottom: 0;
+  min-height: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
-  box-sizing: border-box;
 }
 
-.plot-canvas-grid {
-  display: flex;
-  min-width: 460px;
+.vplot-content {
   height: 100%;
-  min-height: 180px;
-  position: relative;
-  background-image: linear-gradient(to bottom, #f1f5f9 1px, transparent 1px);
-  background-size: 100% 35px;
+  display: grid;
+  grid-template-columns: var(--vplot-axis-w) minmax(0, 1fr); /* ラベルの最小幅で列が広がり枠外へはみ出さないように */
+  grid-template-rows: minmax(0, 1fr) var(--vplot-x-label-h);
 }
 
-.plot-y-axis {
+/* Y軸（横スクロールしても左に固定） */
+.vplot-y-axis {
+  grid-column: 1;
+  grid-row: 1;
   position: sticky;
   left: 0;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 38px;
-  height: 100%;
-  padding-right: 0.4rem;
-  border-right: 2px solid var(--ink-black);
-  background: #ffffff;
+  z-index: 2;
+  background: var(--bg-panel);
 }
 
-.plot-y-axis .y-tick {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--ink-subtle);
-  text-align: right;
-  line-height: 1;
+.vplot-area {
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
 }
 
-.plot-bars-container {
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-around;
-  gap: 0.75rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  height: 100%;
+/* 棒・グリッド線・Y軸ラベルが共有する描画領域（上部は人数ラベル用に空ける） */
+.vplot-inner {
+  position: absolute;
+  top: var(--vplot-top-room);
+  bottom: 0;
+  left: 0;
+  right: 0;
 }
 
-.plot-column {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 100%;
-  justify-content: flex-end;
-  min-width: 54px;
-  cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.plot-column:hover {
-  transform: translateY(-2px);
-}
-
-/* 頭上フラグマーカー */
-.plot-flag-marker {
-  height: 36px;
-  display: flex;
-  align-items: flex-end;
-  margin-bottom: 0.3rem;
-}
-
-.flag-bubble {
-  font-size: 0.76rem;
-  font-weight: 900;
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--radius-pill);
-  border: 2px solid var(--ink-black);
-  white-space: nowrap;
-  box-shadow: 2px 2px 0 var(--ink-black);
-  letter-spacing: -0.01em;
-}
-
-.flag-bubble.user {
-  background: var(--unpis-red);
-  color: #ffffff;
-}
-
-.flag-bubble.actual {
-  background: var(--unpis-green);
-  color: #ffffff;
-}
-
-.flag-bubble.avg {
-  background: var(--unpis-blue);
-  color: #ffffff;
-}
-
-.flag-bubble.match {
-  background: var(--unpis-yellow);
-  color: var(--ink-black);
-}
-
-/* 1単位のプロット棒ステム */
-.plot-bar-stem-wrap {
-  width: 100%;
-  height: 150px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.plot-bar-stem {
-  width: 32px;
-  min-height: 10px;
-  border: 2px solid var(--ink-black);
-  border-bottom: none;
-  border-radius: 4px 4px 0 0;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 0.25rem;
-  transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.plot-bar-count-label {
-  font-size: 0.7rem;
-  font-weight: 900;
-  color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-}
-
-/* バーのカラーバリエーション */
-.plot-bar-user {
-  background: var(--color-red);
-}
-
-.plot-bar-actual {
-  background: var(--color-green);
-}
-
-.plot-bar-avg {
-  background: var(--color-blue);
-}
-
-.plot-bar-standard {
-  background: #334155;
-}
-
-.plot-bar-ghost {
-  background: transparent;
-  border: 2px dashed #cbd5e1;
-  border-bottom: none;
-}
-
-/* 重なりシマシマストライプ */
-.plot-stripe-all {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--color-red),
-    var(--color-red) 4px,
-    var(--color-green) 4px,
-    var(--color-green) 8px,
-    var(--color-blue) 8px,
-    var(--color-blue) 12px
-  );
-}
-
-.plot-stripe-user-actual {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--color-red),
-    var(--color-red) 4px,
-    var(--color-green) 4px,
-    var(--color-green) 8px
-  );
-}
-
-.plot-stripe-user-avg {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--color-red),
-    var(--color-red) 4px,
-    var(--color-blue) 4px,
-    var(--color-blue) 8px
-  );
-}
-
-.plot-stripe-actual-avg {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--color-green),
-    var(--color-green) 4px,
-    var(--color-blue) 4px,
-    var(--color-blue) 8px
-  );
-}
-
-/* X軸ラベル */
-.plot-x-label-wrap {
-  margin-top: 0.5rem;
-  border-top: 2px solid var(--ink-black);
-  width: 100%;
-  text-align: center;
-  padding-top: 0.3rem;
-}
-
-.plot-x-price {
-  font-size: 0.74rem;
-  font-weight: 800;
-  color: var(--ink-black);
-  display: block;
-  white-space: nowrap;
-}
-
-.plot-x-price.highlight {
-  font-weight: 900;
-  color: var(--color-red);
-}
-
-/* ツールチップカード */
-.plot-tooltip-card {
-  margin-top: 1rem;
-  padding: 0.75rem 1rem;
-  background: #1e293b;
-  color: #ffffff;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.plot-tooltip-card .tooltip-title {
-  font-size: 1.1rem;
-  font-weight: 900;
-}
-
-.plot-tooltip-card .tooltip-row {
-  font-size: 0.85rem;
+.vplot-y-label {
+  position: absolute;
+  right: 0.45rem;
+  transform: translateY(50%);
+  font-size: 0.66rem;
   font-weight: 700;
+  line-height: 1;
+  color: var(--ink-subtle);
+  white-space: nowrap;
+}
+
+.vplot-grid-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1px dashed var(--ink-muted);
+  opacity: 0.55;
+}
+
+/* 0人 の基準線 */
+.vplot-grid-line:first-child {
+  border-top: 1.5px solid var(--ink-black);
+  opacity: 1;
+}
+
+.vplot-columns {
+  position: absolute;
+  inset: 0;
   display: flex;
-  gap: 0.4rem;
 }
 
-.plot-tooltip-card .tooltip-badge {
-  font-size: 0.75rem;
-  font-weight: 800;
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--radius-pill);
+.vplot-column {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
-.plot-tooltip-card .tooltip-badge.actual {
-  background: var(--color-green);
-  color: #ffffff;
+.vplot-bar {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(28px, 60%);
+  box-sizing: border-box;
+  background: #d4cfc5;
+  border: 1.5px solid var(--ink-black);
+  border-bottom: none;
+  border-radius: 3px 3px 0 0;
+  transition: height 0.3s ease;
 }
 
-.plot-tooltip-card .tooltip-badge.user {
-  background: var(--color-red);
-  color: #ffffff;
+/* 回答0人の基準価格（正解・平均）は、基準線上の薄いマーカーで位置だけ示す */
+.vplot-bar.is-zero {
+  height: 5px;
+  border-radius: 2px 2px 0 0;
 }
 
-.plot-tooltip-card .tooltip-badge.avg {
-  background: var(--color-blue);
-  color: #ffffff;
+.vplot-count {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -0.2rem);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink-subtle);
+  white-space: nowrap;
+}
+
+/* X軸の金額ラベル */
+.vplot-x-labels {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  align-items: flex-end;
+}
+
+.vplot-x-label {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink-black);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .vplot-x-label {
+    font-size: 0.64rem;
+  }
 }

@@ -4,4 +4,4 @@
 
 ## 目次
 
-- [setup.md](file:///Users/miiiwa/Desktop/dev/bukka_now/docs/guide/setup.md): ローカル開発環境のセットアップと Cloudflare デプロイガイド
+- [setup.md](setup.md): ローカル開発環境のセットアップと Cloudflare デプロイガイド

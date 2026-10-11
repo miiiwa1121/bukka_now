@@ -10,14 +10,14 @@ export interface QuestionData {
   subtitle: string;
   unit: string;
   actualPrice: number;
-  pastPrice?: number;
-  pastPriceYear?: string;
+  pastPrice: number;
+  pastPriceYear: string;
   priceNote: string;
 }
 
-// クライアントへ送信する設問データ（カンニング防止のため actualPrice, priceNote は除外）
-export type PublicQuestion = Omit<QuestionData, 'actualPrice' | 'priceNote'> & {
-  averageExpected: number;
+// クライアントへ送信する設問データ
+// カンニング防止のため、正解（actualPrice）・解説（priceNote）・正解のヒントになる値（pastPrice, 世間平均）は除外
+export type PublicQuestion = Omit<QuestionData, 'actualPrice' | 'priceNote' | 'pastPrice' | 'pastPriceYear'> & {
   totalResponses: number; // 質問ごとの回答者数
 };
 
@@ -61,10 +61,10 @@ export interface QuestionResultItem {
   score: number;
   errorRate: number;
   priceNote: string;
-  pastPrice?: number;    // 過去（2020年等）の基準価格
-  pastPriceYear?: string; // 過去の年度（例: '2020年'）
+  pastPrice: number;     // 過去（2020年等）の基準価格
+  pastPriceYear: string; // 過去の年度（例: '2020年'）
   distribution: DistributionBin[];
-  rawAnswers?: number[]; // 各回答者の生回答値（1単位プロット用）
+  rawAnswers: number[];  // 各回答者の生回答値（直近最大500件＋今回の回答。1単位プロット用）
 }
 
 export interface QuizSubmissionResult {
@@ -77,11 +77,10 @@ export interface QuizSubmissionResult {
   questionResults: QuestionResultItem[];
 }
 
+// 全体統計（正解が逆算できないよう、正解価格・乖離率は含めない）
 export interface GlobalStatsItem {
   questionId: string;
   title: string;
-  actualPrice: number;
-  averageExpected: number;
-  gapPercent: number;
-  trend: 'underestimated' | 'overestimated' | 'accurate';
+  averageExpected: number | null; // 回答がない設問は null
+  totalResponses: number;
 }

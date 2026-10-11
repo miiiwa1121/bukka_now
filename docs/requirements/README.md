@@ -4,5 +4,5 @@
 
 ## 目次
 
-- [decisions.md](file:///Users/miiiwa/Desktop/dev/bukka_now/docs/requirements/decisions.md): プロジェクトの重要決定事項（ADR風ログ）
-- [overview.md](file:///Users/miiiwa/Desktop/dev/bukka_now/docs/requirements/overview.md): サービス全体要件・機能一覧（ヒアリング後に作成予定）
+- [overview.md](overview.md): サービス要件定義書（現行仕様のサービス概要・UXフロー・機能要件）
+- [decisions.md](decisions.md): プロジェクトの重要決定事項（ADR形式の時系列ログ）

@@ -1,97 +1,88 @@
 # データベース設計書（Database Design）
 
 Cloudflare D1（エッジ分散型 SQLite）のテーブル構成、インデックス、およびクエリ仕様を定義します。
+正となる定義は `migrations/0001_initial_schema.sql` です。
 
 ---
 
 ## 1. 概要
 
-`bukka_now` では、ユーザー登録不要でクイズに回答できる一方、全回答者の予想データを蓄積して「世間の予想平均」をリアルタイムに計算します。
-Cloudflare D1 は軽量・高速なエッジ SQL データベースであり、以下のテーブルを管理します。
+- データベース名: `bukka-now-db`（バインディング名 `DB`、設定は `wrangler.toml`）
+- ユーザー登録はないため、個人を識別する情報は保存しない。
+- 保存するのは「診断1回分の結果」「設問ごとの回答」「設問別の集計」の3種類。
+- **シードデータは投入しない**。世間平均・分布・回答者数は実回答だけで作る。
+
+```mermaid
+erDiagram
+    quiz_submissions ||--o{ quiz_answers : "submission_id"
+    quiz_answers }o..|| item_aggregates : "question_id（論理参照）"
+```
 
 ---
 
 ## 2. テーブル設計
 
 ### 2.1 `quiz_submissions`（診断セッションログ）
-クイズ1回ごとの全体結果ログ（匿名）。
+
+クイズ1回ごとの結果（匿名）。件数がそのまま「累計回答者数」になる。
 
 | カラム名 | 型 | 制約 | 説明 |
 | :--- | :--- | :--- | :--- |
-| `id` | TEXT | PRIMARY KEY | セッションUUID（例: `sub_uuidv4`） |
-| `total_score` | INTEGER | NOT NULL | 総合物価意識スコア（0〜100点） |
-| `sense_type` | TEXT | NOT NULL | 診断タイプコード（`master`, `timeslip`, `panic`, `rough` 等） |
+| `id` | TEXT | PRIMARY KEY | `sub_<epochミリ秒>_<ランダム7文字>` |
+| `total_score` | INTEGER | NOT NULL | 総合スコア（0〜100） |
+| `sense_type` | TEXT | NOT NULL | タイプコード（`master` / `timeslip` / `panic` / `rough`） |
+| `bias_score` | REAL | NOT NULL | 平均バイアス |
 | `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | 受信日時 |
 
 ### 2.2 `quiz_answers`（設問別回答ログ）
-各問ごとのユーザー予想値・選択値の記録。
 
 | カラム名 | 型 | 制約 | 説明 |
 | :--- | :--- | :--- | :--- |
 | `id` | INTEGER | PRIMARY KEY AUTOINCREMENT | 内部ID |
-| `submission_id`| TEXT | NOT NULL, REFERENCES quiz_submissions(id) | セッションID |
-| `question_id` | TEXT | NOT NULL | 設問ID（例: `q1_egg`, `q2_bread` 等） |
-| `user_answer` | REAL | NOT NULL | ユーザーの回答値（円、または選択肢の数値） |
-| `error_rate` | REAL | NOT NULL | 正解値に対する誤差率（`|回答 - 正解| / 正解`） |
-| `score` | INTEGER | NOT NULL | この問のスコア（0〜100点） |
+| `submission_id` | TEXT | NOT NULL, FK → `quiz_submissions(id)` ON DELETE CASCADE | セッションID |
+| `question_id` | TEXT | NOT NULL | 設問ID（`q1`〜`q100`） |
+| `user_answer` | REAL | NOT NULL | 回答金額（円） |
+| `error_rate` | REAL | NOT NULL | 相対誤差率 `|回答 - 正解| / 正解`（小数3桁） |
+| `score` | INTEGER | NOT NULL | 設問スコア（0〜100） |
 | `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | 回答日時 |
 
-### 2.3 `item_aggregates`（設問別・世間予想集計キャッシュ）
-各問の全ユーザー回答平均を瞬時に読み出すためのサマリーテーブル。回答受信時にインクリメンタル更新または高速計算します。
+インデックス: `idx_answers_question_id(question_id)`、`idx_answers_submission_id(submission_id)`
+
+### 2.3 `item_aggregates`（設問別集計サマリー）
+
+設問ごとの平均予想を高速に返すためのテーブル。回答を受け取るたびに UPSERT で更新する。
 
 | カラム名 | 型 | 制約 | 説明 |
 | :--- | :--- | :--- | :--- |
 | `question_id` | TEXT | PRIMARY KEY | 設問ID |
 | `total_responses` | INTEGER | DEFAULT 0 | 累計回答数 |
-| `sum_answers` | REAL | DEFAULT 0 | 累計回答合計金額 |
-| `average_answer` | REAL | DEFAULT 0 | 全回答者の平均予想金額（`sum_answers / total_responses`） |
+| `sum_answers` | REAL | DEFAULT 0 | 回答金額の合計 |
+| `average_answer` | REAL | DEFAULT 0 | `sum_answers / total_responses` |
 | `updated_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | 最終更新日時 |
 
 ---
 
-## 3. SQL スキーマ定義（DDL）
+## 3. 主要クエリ
 
-```sql
--- セッション記録テーブル
-CREATE TABLE IF NOT EXISTS quiz_submissions (
-    id TEXT PRIMARY KEY,
-    total_score INTEGER NOT NULL,
-    sense_type TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
+| 用途 | 発行元 | クエリ概要 |
+| :--- | :--- | :--- |
+| 設問別平均・回答数 | `GET /api/quiz`, `POST /api/quiz/submit`, `GET /api/stats` | `SELECT question_id, average_answer, total_responses FROM item_aggregates` |
+| 累計回答者数 | 同上 | `SELECT COUNT(*) FROM quiz_submissions` |
+| 分布用の過去回答 | `POST /api/quiz/submit` | `ROW_NUMBER() OVER (PARTITION BY question_id ORDER BY id DESC)` で設問ごとに直近500件 |
+| 最低値・最高値 | `POST /api/quiz/submit` | `SELECT question_id, MIN(user_answer), MAX(user_answer) FROM quiz_answers WHERE question_id IN (...) GROUP BY question_id` |
+| セッション保存 | `POST /api/quiz/submit` | `INSERT INTO quiz_submissions (id, total_score, sense_type, bias_score)` |
+| 回答保存 | 同上（設問ごと） | `INSERT INTO quiz_answers (...)` |
+| 集計更新 | 同上（設問ごと） | `INSERT ... ON CONFLICT(question_id) DO UPDATE SET total_responses+1, sum_answers+回答, average_answer 再計算` |
 
--- 各問回答記録テーブル
-CREATE TABLE IF NOT EXISTS quiz_answers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    submission_id TEXT NOT NULL,
-    question_id TEXT NOT NULL,
-    user_answer REAL NOT NULL,
-    error_rate REAL NOT NULL,
-    score INTEGER NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (submission_id) REFERENCES quiz_submissions(id) ON DELETE CASCADE
-);
+- 保存系クエリ（1 + 設問数 × 2 文）は `db.batch()` で1トランザクションにまとめて実行する。
+- `IN (...)` のバインド変数は最大100個（出題数の上限）。D1 の1クエリあたりのバインド上限（100）に収まる。
 
--- インデックス
-CREATE INDEX IF NOT EXISTS idx_answers_question_id ON quiz_answers(question_id);
-CREATE INDEX IF NOT EXISTS idx_answers_submission_id ON quiz_answers(submission_id);
+---
 
--- 集計テーブル
-CREATE TABLE IF NOT EXISTS item_aggregates (
-    question_id TEXT PRIMARY KEY,
-    total_responses INTEGER DEFAULT 0,
-    sum_answers REAL DEFAULT 0,
-    average_answer REAL DEFAULT 0,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
+## 4. マイグレーション運用
 
--- 初期シードデータ（実勢調査前の初期世間平均データとして公的相場近傍の初期値を投入）
-INSERT OR IGNORE INTO item_aggregates (question_id, total_responses, sum_answers, average_answer) VALUES
-('q1_egg', 50, 11500, 230.0),
-('q2_bread', 50, 8500, 170.0),
-('q3_burger', 50, 2400, 48.0),
-('q4_tissue', 50, 17500, 350.0),
-('q5_gyudon', 50, 21500, 430.0),
-('q6_movie', 50, 95000, 1900.0),
-('q7_electricity', 50, 340000, 6800.0);
-```
+- ファイルの置き場所: `migrations/`（`wrangler.toml` の `migrations_dir`）
+- 適用コマンド:
+  - ローカル: `npm run db:migrate:local`
+  - 本番: `npm run db:migrate:remote`
+- スキーマ変更は既存ファイルを書き換えず、`0002_xxx.sql` のように新しいファイルを追加する。
