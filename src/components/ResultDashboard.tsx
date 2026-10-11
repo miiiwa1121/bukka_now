@@ -337,6 +337,13 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
         </span>
       </button>
 
+      {/* 【出題別の上までを独立したカードとして配置（横スライドせず画面固定）】 */}
+      <div className="result-independent-score-card-wrap">
+        <div className="glass-card animate-fade-in result-independent-score-card" id="independent-score-card">
+          {renderCommonScoreHeader()}
+        </div>
+      </div>
+
       {/* ホワイトボードスライドラック（横スライドコンテナ） */}
       <div className="whiteboard-track-viewport">
         <div className={`whiteboard-sliding-rail is-${activeBoard}-active`}>
@@ -345,9 +352,6 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
           <div className="whiteboard-panel panel-summary">
             <div className="whiteboard-card-wrapper">
               <div className="glass-card animate-fade-in" id="summary-main-card">
-                {renderCommonScoreHeader()}
-
-                {/* 3. 各問の回答分布・統計データリスト */}
                 <div className="questions-result-list" id="comparison-section">
                   <div className="result-section-header">
                     <span>出題別の回答分布・統計（全{result.questionResults.length}問）</span>
@@ -406,19 +410,19 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
                       </div>
                     );
                   })}
-                </div>
 
-                {/* 4. 最下部アクション */}
-                <div className="result-bottom-actions">
-                  <button
-                    type="button"
-                    className="btn-action-top btn-retry-top"
-                    id="btn-retry-bottom"
-                    onClick={onRetry}
-                    style={{ width: '100%', maxWidth: '360px', height: '48px', fontSize: '1rem' }}
-                  >
-                    <span>もう一度挑戦する</span>
-                  </button>
+                  {/* 最下部アクション */}
+                  <div className="result-bottom-actions">
+                    <button
+                      type="button"
+                      className="btn-action-top btn-retry-top"
+                      id="btn-retry-bottom"
+                      onClick={onRetry}
+                      style={{ width: '100%', maxWidth: '360px', height: '48px', fontSize: '1rem' }}
+                    >
+                      <span>もう一度挑戦する</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -427,9 +431,7 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
           {/* 【面2：データ詳細ボード（1単位でプロットされた棒グラフ全問一覧）】 */}
           <div className="whiteboard-panel panel-detailed">
             <div className="whiteboard-card-wrapper">
-              <div className="glass-card animate-fade-in detailed-board-card">
-                {renderCommonScoreHeader()}
-
+              <div className="glass-card animate-fade-in" id="detailed-main-card">
                 <div className="questions-result-list">
                   <div className="result-section-header">
                     <span>出題別の1単位プロット棒グラフ（全{result.questionResults.length}問）</span>
@@ -452,9 +454,7 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result, onRetr
           {/* 【面3：物価推移ボード（過去から現在への価格変動全問一覧）】 */}
           <div className="whiteboard-panel panel-trend">
             <div className="whiteboard-card-wrapper">
-              <div className="glass-card animate-fade-in trend-board-card">
-                {renderCommonScoreHeader()}
-
+              <div className="glass-card animate-fade-in" id="trend-main-card">
                 <div className="questions-result-list">
                   <div className="result-section-header">
                     <span>出題別の物価推移・価格変動（全{result.questionResults.length}問）</span>

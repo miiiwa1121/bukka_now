@@ -1566,17 +1566,28 @@ body.detailed-view-active {
   }
 }
 
-/* 面2：データ詳細ボード（全問一覧表示）＆ 面3：物価推移ボード */
-.detailed-board-card,
-.trend-board-card {
-  padding: 1.5rem;
+/* 独立したスコアカード（タイトル直下に独立配置、横スライドせず画面固定） */
+.result-independent-score-card-wrap {
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+  padding: 0 1rem;
+  box-sizing: border-box;
 }
 
+.result-independent-score-card {
+  width: var(--card-width);
+  max-width: var(--card-width);
+  box-sizing: border-box;
+}
+
+/* スライド各ボードのリスト共通スタイル */
 .detailed-all-questions-list,
 .trend-all-questions-list {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.8rem;
 }
 
 /* ==========================================================================
