@@ -2108,6 +2108,12 @@ body.detailed-view-active {
   }
 }
 
+/* 吹き出しの付記（「（あなた・正解）」）。折り返すときは付記の途中で改行しない */
+.chart-tooltip-tag {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 /* 吹き出しを地点の下側に出す（上部に余裕がない場合） */
 .chart-tooltip.is-below {
   transform: translate(-50%, calc(100% + 14px));

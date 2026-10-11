@@ -94,10 +94,19 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
     const scroller = scrollRef.current;
     if (!tooltip || !scroller) return;
     tooltip.style.translate = '0px 0px';
-    const tooltipRect = tooltip.getBoundingClientRect();
+    tooltip.style.whiteSpace = '';
+    tooltip.style.maxWidth = '';
+    tooltip.style.lineHeight = '';
     const scrollerRect = scroller.getBoundingClientRect();
     const left = (axisRef.current?.getBoundingClientRect().right ?? scrollerRect.left) + TOOLTIP_EDGE_GAP;
     const right = scrollerRect.right - TOOLTIP_EDGE_GAP;
+    // 見えている範囲より吹き出しが広い（スマホ幅で付記がある場合など）ときは、折り返して収める
+    if (tooltip.getBoundingClientRect().width > right - left) {
+      tooltip.style.whiteSpace = 'normal';
+      tooltip.style.maxWidth = `${Math.floor(right - left)}px`;
+      tooltip.style.lineHeight = '1.35';
+    }
+    const tooltipRect = tooltip.getBoundingClientRect();
     let dx = 0;
     if (tooltipRect.width > right - left || tooltipRect.left < left) dx = left - tooltipRect.left;
     else if (tooltipRect.right > right) dx = right - tooltipRect.right;
@@ -135,9 +144,17 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
     scroller.scrollLeft += columnRect.left + columnRect.width / 2 - (scrollerRect.left + scrollerRect.width / 2);
   }, [initialIndex]);
 
-  const barLabel = (bar: PlotBarData) => {
+  // 吹き出しの文言。「1,400円 11人」と、あなたの回答・正解・平均値に当たる棒の付記「（あなた・正解）」
+  const barLabelParts = (bar: PlotBarData) => {
     const tags = [bar.hasUserAnswer && 'あなた', bar.hasActualPrice && '正解', bar.hasAverageExpected && '平均値'].filter(Boolean);
-    return `${bar.price.toLocaleString()}${item.unit} ${bar.count}人${tags.length > 0 ? `（${tags.join('・')}）` : ''}`;
+    return {
+      main: `${bar.price.toLocaleString()}${item.unit} ${bar.count}人`,
+      tag: tags.length > 0 ? `（${tags.join('・')}）` : '',
+    };
+  };
+  const barLabel = (bar: PlotBarData) => {
+    const { main, tag } = barLabelParts(bar);
+    return main + tag;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -282,7 +299,9 @@ export const DetailedPlotChart: React.FC<DetailedPlotChartProps> = ({ item, ques
                     style={{ left: `${selectedX}%`, bottom: selected.count > 0 ? `${selectedY}%` : '5px' }}
                     aria-hidden="true"
                   >
-                    {barLabel(selected)}
+                    {barLabelParts(selected).main}
+                    {/* 折り返すときは付記の手前で改行する */}
+                    {barLabelParts(selected).tag && <span className="chart-tooltip-tag">{barLabelParts(selected).tag}</span>}
                   </span>
                 </div>
               </div>
